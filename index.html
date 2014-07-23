@@ -1,0 +1,335 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Dimensions Browser Extension</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="shortcut icon" href="favicon.ico"> 
+<link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/baocaagndhipibgklemoalmkljaimfdj">
+
+<header>
+  <h1><img src="extension/images/icon48.png" srcset="extension/images/icon128.png 2x" width="48" height="48"><span class="h1">Dimensions</span></h1>
+  <h2><span class="h2">Chrome Browser Extension</span></h2>
+  <a href="javascript:chrome.webstore.install()" class="button invisible"><img src="img/chrome-icon.png" srcset="img/chrome-icon@2x.png" width="20" height="20"> Add to Chrome</a>
+</header>
+
+<div class="main container">
+  <div class="columns">
+    <div class="column">
+      <img src="img/search.png" srcset="img/search@2x.png 2x" height="52">
+      <h2>Images &amp; HTML Elements</h2>
+      <p>Measure between the following elements: images, input-fields, buttons, videos, gifs, text, icons. You can measure everything you see in the browser.</p>
+    </div>
+    <div class="column">
+      <img src="img/files.png" srcset="img/files@2x.png 2x" height="52">
+      <h2>Mockups</h2>
+      <p>Your designer handed you mockups as PNGs or JPEGs? Just drop them into Chrome, activate Dimensions and start measuring.</p>
+    </div>
+    <div class="column">
+      <img src="img/keyboard shortcut.png" srcset="img/keyboard shortcut@2x.png 2x" height="52">
+      <h2>Keyboard Shortcut</h2>
+      <p>For the best experience set a keyboard shortcut in the Extension Settings to quickly enable and disable Dimensions.</p>
+    </div>
+    <div class="column">
+      <img src="img/open source.png" srcset="img/open source@2x.png 2x" height="52">
+      <h2>Open Source</h2>
+      <p>Dimensions is Open Source and hosted on Github. Want to port it to Firefox? Go ahead and fork it. Pull requests are welcomed!</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <div>
+      Made in Berlin in 2014 by Felix Niklas <a href="http://www.twitter.com/mrflix" target="_blank">@mrflix</a>
+    </div>
+    <ul>
+      <li><a href="#">Github Project</a>
+      <li><a href="#">Issues</a>
+      <li><a href="#">Chrome Webstore</a>
+    </ul>
+  </div>
+</footer>
+
+
+
+<script>
+
+var favicon = document.querySelector('link[rel="shortcut icon"]');
+var holder = document.querySelector('header');
+var threshold = 6;
+var data, width, height;
+var is_firefox = /firefox/i.test(navigator.userAgent);
+var virgin = true;
+
+var images = [];
+var loadedImages;
+
+// prefetch header images for the Dimensions canvas
+
+function render(){
+  loadedImages = 0;
+  var sources = ['img/header.png'];
+  var imgs = holder.querySelectorAll('img:not(.invisible)');
+
+  for(var i=0; i<imgs.length; i++)
+    sources.push(imgs[i].src);
+
+  sources.forEach(function(src, i){
+    var image = new Image();
+    image.onload = function(){
+      images[i] = this;
+
+      if(++loadedImages == sources.length)
+        drawCanvas();
+    };
+    image.src = src;
+  });
+}
+
+function storeMousePos(event){
+  var x, y;
+
+  if(virgin){
+    virgin = false;
+    favicon.href = 'favicon_active.ico';
+  }
+
+  if(event.touches){
+    x = event.touches[0].pageX;
+    y = event.touches[0].pageY;
+  } else {
+    x = event.pageX;
+    y = event.pageY;
+  }
+
+  showDistances( measureDistances(x, y) );
+}
+
+function removeDimensions(){
+  var dimensions = holder.querySelector('.dimensions');
+  dimensions && holder.removeChild(dimensions);
+}
+
+//
+// showDistances
+// =============
+//  
+// renders the visualisation of the measured distances
+//
+
+function showDistances(distances){
+  removeDimensions();
+
+  if(!distances)
+    return;
+
+  var dimensions = document.createElement('div');
+  dimensions.className = 'dimensions';
+  dimensions.style.left = distances.x + "px";
+  dimensions.style.top = distances.y + "px";
+
+  var measureWidth = distances.left + distances.right;
+  var measureHeight = distances.top + distances.bottom;
+
+  var xAxis = document.createElement('div');
+  xAxis.className = 'x axis';
+  xAxis.style.left = -distances.left + "px";
+  xAxis.style.width = measureWidth + "px";
+
+  var yAxis = document.createElement('div');
+  yAxis.className = 'y axis';
+  yAxis.style.top = -distances.top + "px";
+  yAxis.style.height = measureHeight + "px";
+
+  var tooltip = document.createElement('div');
+  tooltip.className = 'tooltip';
+  tooltip.textContent = measureWidth +" x "+ measureHeight + " px";
+
+  dimensions.appendChild(xAxis);
+  dimensions.appendChild(yAxis);
+  dimensions.appendChild(tooltip);
+
+  holder.appendChild(dimensions);
+}
+
+//
+// measureDistances
+// ================
+//  
+// measures the distances to the next boundary
+// around pageX and pageY.
+//
+
+function measureDistances(x, y){
+  var distances = { top: 0, right: 0, bottom: 0, left: 0 };
+  var directions = {
+    top: { x: 0, y: -1 },
+    right: { x: 1, y: 0 },
+    bottom: { x: 0, y: 1 },
+    left: { x: -1, y: 0 }
+  }
+  var lightness = getLightnessAt(x, y);
+
+  if(lightness === 68)
+    return false;
+
+  for(var direction in distances){
+    var vector = directions[direction];
+    var boundaryFound = false;
+    var sx = x;
+    var sy = y;
+    var color;
+
+    while(!boundaryFound){
+      sx += vector.x;
+      sy += vector.y;
+
+      if(inBoundaries(sx, sy) && Math.abs(getLightnessAt(sx, sy) - lightness) < threshold){
+        distances[direction]++;
+      } else {
+        boundaryFound = true;
+      }
+    }
+  }
+
+  distances.x = x;
+  distances.y = y;
+
+  return distances;
+}
+
+function getLightnessAt(x, y){
+  var i = y * width + x;
+
+  return data[i];
+}
+
+//
+// inBoundaries
+// ============
+//  
+// checks if x and y are in the canvas boundaries
+//
+
+function inBoundaries(x, y){
+  if(x > 0 && x < width && y > 0 && y < height)
+    return true;
+  else
+    return false;
+}
+
+//
+// Grayscale
+// ---------
+//  
+// reduces the input image data to an array of gray shades.
+//
+
+function grayscale(imgData){
+  var gray = new Int16Array(imgData.length/4);
+
+  for(var i=0, n=0, l=imgData.length; i<l; i+=4, n++){
+    var r = imgData[i],
+        g = imgData[i+1],
+        b = imgData[i+2];
+
+    // weighted grayscale algorithm
+    gray[n] = Math.round(r * 0.3 + g * 0.59 + b * 0.11);
+  }
+
+  return gray;
+}
+
+//
+// drawCanvas
+// ----------
+//  
+// responsible to draw the objects onto the canvas
+//
+
+function drawCanvas(){
+  var canvas = document.createElement('canvas');
+  var ctx = canvas.getContext('2d');
+
+  // adjust the canvas size to the image size
+  width = canvas.width = holder.clientWidth;
+  height = canvas.height = holder.clientHeight;
+
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, width, height);
+  
+  // draw the background
+  var background = images.shift();
+  var sx = Math.round((background.width - width)/2);
+  var sy = Math.round((background.height - height)/2);
+  ctx.drawImage(background, sx, sy, width, height, 0, 0, width, height);
+
+  // draw images
+  for(var index in images){
+    var src = images[index].src.slice( images[index].src.lastIndexOf('/') + 1, images[index].src.lastIndexOf('.') );
+    var el = holder.querySelector('img[src*='+ src +']');
+    var pos = el.getBoundingClientRect();
+    ctx.drawImage(images[index], pos.left, scrollY+pos.top, el.clientWidth, el.clientHeight);
+  }
+
+  // draw install button
+  var installBtn = holder.querySelector('.button');
+  var btnPos = installBtn.getBoundingClientRect();
+  ctx.fillStyle = '#444';
+
+  roundedRect(ctx, btnPos.left, scrollY+btnPos.top, installBtn.offsetWidth, installBtn.offsetHeight, 3);
+
+
+  // place the headlines
+  ['.h1', '.h2'].forEach(function(selector){
+    var el = holder.querySelector(selector);
+    var pos = el.getBoundingClientRect();
+    var style = getComputedStyle(el);
+    ctx.font = style.fontWeight +" "+ style.fontSize +" "+ style.fontFamily;
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = style.color;
+    var top = scrollY + pos.top;
+
+    if(is_firefox)
+      top += 0.4*parseInt(style.fontSize);
+
+    ctx.fillText(el.textContent, pos.left, top);
+  });
+  
+  // read out the image data from the canvas
+  var imgData = ctx.getImageData(0, 0, width, height).data;
+  
+  // erase data array
+  data = [];
+  
+  // grayscale the image data
+  data = grayscale( imgData );
+
+  // debug
+  //holder.appendChild(canvas);
+
+  holder.onmousemove = storeMousePos;
+  holder.ontouchmove = storeMousePos;
+
+  holder.onmouseleave = removeDimensions;
+
+  showDistances( measureDistances(holder.clientWidth/2 - 210, holder.clientHeight/2 - 150) );
+}
+
+// by visionmedia (TJ Holowaychuk)
+// https://github.com/component/rounded-rect/blob/master/index.js
+
+function roundedRect(ctx, x, y, w, h, r) {
+  if (w < 2 * r) r = w / 2;
+  if (h < 2 * r) r = h / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.fill();
+};
+
+render();
+window.onresize = render;
+</script>

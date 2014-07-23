@@ -1,0 +1,81 @@
+.fn-dimensions {
+  position: fixed;
+  width: 0;
+  height: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.screenshot {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 999;
+}
+
+.fn-tooltip {
+  position: absolute;
+  left: 5px;
+  bottom: 4px;
+  color: white;
+  padding: 2px 5px;
+  white-space: nowrap;
+  font-size: 14px;
+  font-family: sans-serif;
+  border-radius: 3px;
+  background: hsla(205,100%,10%,.55);
+}
+
+  .fn-tooltip.left {
+    left: auto;
+    right: 5px;
+  }
+
+  .fn-tooltip.bottom {
+    bottom: auto;
+    top: 5px;
+  }
+
+.fn-axis {
+  position: absolute;
+  background: hsla(205,100%,50%,.55);
+}
+
+  .fn-axis:before,
+  .fn-axis:after {
+    content: "";
+    position: absolute;
+    background: inherit;
+  }
+
+  .x.fn-axis:before,
+  .x.fn-axis:after {
+    left: 0;
+    height: 5px;
+    top: -2px;
+    width: 1px;
+  }
+
+  .x.fn-axis:after {
+    left: 100%;
+  }
+
+  .y.fn-axis:before,
+  .y.fn-axis:after {
+    left: -2px;
+    height: 1px;
+    top: 0;
+    width: 5px;
+  }
+
+  .y.fn-axis:after {
+    top: 100%;
+  }
+
+  .x.fn-axis {
+    height: 1px;
+  }
+
+  .y.fn-axis {
+    width: 1px;
+  }
