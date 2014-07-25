@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="shortcut icon" href="favicon.ico"> 
 <link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/baocaagndhipibgklemoalmkljaimfdj">
+<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
 
 <header>
   <h1><img src="extension/images/icon48.png" srcset="extension/images/icon128.png 2x" width="48" height="48"><span class="h1">Dimensions</span></h1>
@@ -59,6 +60,7 @@ var threshold = 6;
 var data, width, height;
 var is_firefox = /firefox/i.test(navigator.userAgent);
 var virgin = true;
+var worker;
 
 var images = [];
 var loadedImages;
@@ -86,6 +88,8 @@ function render(){
 }
 
 function storeMousePos(event){
+  event.preventDefault();
+
   var x, y;
 
   if(virgin){
@@ -101,7 +105,11 @@ function storeMousePos(event){
     y = event.pageY;
   }
 
-  showDistances( measureDistances(x, y) );
+  worker.postMessage({ 
+    type: 'position', 
+    x: x, 
+    y: y
+  });
 }
 
 function removeDimensions(){
@@ -116,7 +124,8 @@ function removeDimensions(){
 // renders the visualisation of the measured distances
 //
 
-function showDistances(distances){
+function showDistances(event){
+  var distances = event.data;
   removeDimensions();
 
   if(!distances)
@@ -151,93 +160,7 @@ function showDistances(distances){
   holder.appendChild(dimensions);
 }
 
-//
-// measureDistances
-// ================
-//  
-// measures the distances to the next boundary
-// around pageX and pageY.
-//
 
-function measureDistances(x, y){
-  var distances = { top: 0, right: 0, bottom: 0, left: 0 };
-  var directions = {
-    top: { x: 0, y: -1 },
-    right: { x: 1, y: 0 },
-    bottom: { x: 0, y: 1 },
-    left: { x: -1, y: 0 }
-  }
-  var lightness = getLightnessAt(x, y);
-
-  if(lightness === 68)
-    return false;
-
-  for(var direction in distances){
-    var vector = directions[direction];
-    var boundaryFound = false;
-    var sx = x;
-    var sy = y;
-    var color;
-
-    while(!boundaryFound){
-      sx += vector.x;
-      sy += vector.y;
-
-      if(inBoundaries(sx, sy) && Math.abs(getLightnessAt(sx, sy) - lightness) < threshold){
-        distances[direction]++;
-      } else {
-        boundaryFound = true;
-      }
-    }
-  }
-
-  distances.x = x;
-  distances.y = y;
-
-  return distances;
-}
-
-function getLightnessAt(x, y){
-  var i = y * width + x;
-
-  return data[i];
-}
-
-//
-// inBoundaries
-// ============
-//  
-// checks if x and y are in the canvas boundaries
-//
-
-function inBoundaries(x, y){
-  if(x > 0 && x < width && y > 0 && y < height)
-    return true;
-  else
-    return false;
-}
-
-//
-// Grayscale
-// ---------
-//  
-// reduces the input image data to an array of gray shades.
-//
-
-function grayscale(imgData){
-  var gray = new Int16Array(imgData.length/4);
-
-  for(var i=0, n=0, l=imgData.length; i<l; i+=4, n++){
-    var r = imgData[i],
-        g = imgData[i+1],
-        b = imgData[i+2];
-
-    // weighted grayscale algorithm
-    gray[n] = Math.round(r * 0.3 + g * 0.59 + b * 0.11);
-  }
-
-  return gray;
-}
 
 //
 // drawCanvas
@@ -297,12 +220,17 @@ function drawCanvas(){
   
   // read out the image data from the canvas
   var imgData = ctx.getImageData(0, 0, width, height).data;
+  console.log(imgData);
   
-  // erase data array
-  data = [];
-  
-  // grayscale the image data
-  data = grayscale( imgData );
+  worker = new Worker("js/worker.js");
+  worker.onmessage = showDistances;
+  worker.postMessage({ 
+    type: 'imgData',
+    imgData: imgData.buffer,  
+    width: width,
+    height: height,
+    threshold: threshold
+  }, [imgData.buffer]);
 
   // debug
   //holder.appendChild(canvas);
@@ -311,8 +239,12 @@ function drawCanvas(){
   holder.ontouchmove = storeMousePos;
 
   holder.onmouseleave = removeDimensions;
-
-  showDistances( measureDistances(holder.clientWidth/2 - 210, holder.clientHeight/2 - 150) );
+  
+  worker.postMessage({ 
+    type: 'position', 
+    x: holder.clientWidth/2 - 210, 
+    y: holder.clientHeight/2 - 150
+  });
 }
 
 // by visionmedia (TJ Holowaychuk)
