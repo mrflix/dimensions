@@ -81,6 +81,11 @@ a {
   line-height: 42px;
   border: 1px solid;
   border-radius: 3px;
+  outline: none;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
 }
 
   .button img {
@@ -154,19 +159,54 @@ footer {
   position: absolute;
   left: 5px;
   bottom: 4px;
+  padding: 0 5px;
   color: white;
-  padding: 2px 5px;
+  text-align: center;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: 12px;
+  line-height: 20px;
   font-family: sans-serif;
   border-radius: 3px;
   background: hsla(205,100%,10%,.55);
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
 }
+
+  .tooltip.x,
+  .tooltip.y {
+    padding: 0;
+    color: hsla(205,100%,50%,.75);
+    background: none;
+  }
+
+  .tooltip.y {
+    bottom: 9px;
+    left: -50px;
+    width: 100px;
+  }
+
+  .touch .tooltip.x {
+    bottom: -10px;
+    left: 44px;
+  }
+
+  .touch .tooltip.y {
+    bottom: 30px;
+  }
 
 .axis {
   position: absolute;
   background: hsla(205,100%,50%,.55);
 }
+
+  .x.axis {
+    height: 1px;
+  }
+
+  .y.axis {
+    width: 1px;
+  }
 
   .axis:before,
   .axis:after {
@@ -197,12 +237,4 @@ footer {
 
   .y.axis:after {
     top: 100%;
-  }
-
-  .x.axis {
-    height: 1px;
-  }
-
-  .y.axis {
-    width: 1px;
   }

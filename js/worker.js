@@ -9,7 +9,16 @@ onmessage = function(event){
       threshold = event.data.threshold;
       break;
     case "position":
-      postMessage( measureDistances(event.data.x, event.data.y) );
+      postMessage({
+        type: "distances",
+        distances: measureDistances(event.data.x, event.data.y)
+      });
+      break;
+    case "debug":
+      postMessage({
+        type: "debug",
+        data: data
+      });
       break;
   }
 }
@@ -23,6 +32,10 @@ onmessage = function(event){
 //
 
 function measureDistances(x, y){
+  if(!inBoundaries(x, y))
+    return false;
+
+  var area = 0;
   var distances = { top: 0, right: 0, bottom: 0, left: 0 };
   var directions = {
     top: { x: 0, y: -1 },
@@ -41,15 +54,56 @@ function measureDistances(x, y){
     var sx = x;
     var sy = y;
     var color;
+    var currentLightness;
 
     while(!boundaryFound){
       sx += vector.x;
       sy += vector.y;
+      currentLightness = getLightnessAt(sx, sy);
 
-      if(inBoundaries(sx, sy) && Math.abs(getLightnessAt(sx, sy) - lightness) < threshold){
+      if(currentLightness && Math.abs(currentLightness - lightness) < threshold){
         distances[direction]++;
       } else {
+        area += distances[direction];
         boundaryFound = true;
+      }
+    }
+  }
+
+  if(area <= 6){
+    distances = { top: 0, right: 0, bottom: 0, left: 0 };
+    var similarColorStreakThreshold = 10;
+
+    for(var direction in distances){
+      var vector = directions[direction];
+      var boundaryFound = false;
+      var sx = x;
+      var sy = y;
+      var color, currentLightness;
+      var lastLightness = lightness;
+      var similarColorStreak = 0;
+
+      while(!boundaryFound){
+        sx += vector.x;
+        sy += vector.y;
+        currentLightness = getLightnessAt(sx, sy);
+
+        if(currentLightness){
+          distances[direction]++;
+
+          if(Math.abs(currentLightness - lastLightness) < threshold){
+            similarColorStreak++;
+            if(similarColorStreak === similarColorStreakThreshold){ 
+              distances[direction] -= (similarColorStreakThreshold+1);
+              boundaryFound = true;
+            }
+          } else {
+            similarColorStreak = 0;
+          }
+          lastLightness = currentLightness;
+        } else {
+          boundaryFound = true;
+        }
       }
     }
   }
@@ -61,9 +115,7 @@ function measureDistances(x, y){
 }
 
 function getLightnessAt(x, y){
-  var i = y * width + x;
-
-  return data[i];
+  return inBoundaries(x, y) ? data[y * width + x] : -1;
 }
 
 //

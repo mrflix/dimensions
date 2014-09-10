@@ -4,12 +4,11 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="shortcut icon" href="favicon.ico"> 
 <link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/baocaagndhipibgklemoalmkljaimfdj">
-<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
 
 <header>
   <h1><img src="extension/images/icon48.png" srcset="extension/images/icon128.png 2x" width="48" height="48"><span class="h1">Dimensions</span></h1>
   <h2><span class="h2">Chrome Browser Extension</span></h2>
-  <a href="javascript:chrome.webstore.install()" class="button invisible"><img src="img/chrome-icon.png" srcset="img/chrome-icon@2x.png" width="20" height="20"> Add to Chrome</a>
+  <a href="javascript:chrome.webstore.install(undefined, undefined, function(err) {console.error(err)})" class="button invisible"><img src="img/chrome-icon.png" srcset="img/chrome-icon@2x.png" width="20" height="20"> Add to Chrome</a>
 </header>
 
 <div class="main container">
@@ -61,6 +60,11 @@ var data, width, height;
 var is_firefox = /firefox/i.test(navigator.userAgent);
 var virgin = true;
 var worker;
+var isTouch = 'ontouchstart' in window;
+var canvas, ctx;
+
+if(isTouch)
+  holder.classList.add('touch');
 
 var images = [];
 var loadedImages;
@@ -124,38 +128,58 @@ function removeDimensions(){
 // renders the visualisation of the measured distances
 //
 
-function showDistances(event){
-  var distances = event.data;
+function showDistances(distances){
   removeDimensions();
 
   if(!distances)
     return;
+
+  var measureWidth = distances.left + distances.right;
+  var measureHeight = distances.top + distances.bottom;
+  var textWidth = 6 + 7 * measureWidth.toString().length;
+  var textHeight = 20;
+  var xTextStart = 14;
+  var yTextStart = 9;
 
   var dimensions = document.createElement('div');
   dimensions.className = 'dimensions';
   dimensions.style.left = distances.x + "px";
   dimensions.style.top = distances.y + "px";
 
-  var measureWidth = distances.left + distances.right;
-  var measureHeight = distances.top + distances.bottom;
-
   var xAxis = document.createElement('div');
   xAxis.className = 'x axis';
   xAxis.style.left = -distances.left + "px";
-  xAxis.style.width = measureWidth + "px";
+  xAxis.style.width = (distances.left + distances.right) + "px";
+  dimensions.appendChild(xAxis);
 
   var yAxis = document.createElement('div');
   yAxis.className = 'y axis';
   yAxis.style.top = -distances.top + "px";
-  yAxis.style.height = measureHeight + "px";
+  yAxis.style.height = (distances.top + distances.bottom) + "px";
+  dimensions.appendChild(yAxis);
 
   var tooltip = document.createElement('div');
   tooltip.className = 'tooltip';
-  tooltip.textContent = measureWidth +" x "+ measureHeight + " px";
-
-  dimensions.appendChild(xAxis);
-  dimensions.appendChild(yAxis);
+  // tooltip.style.width = textWidth + "px";
+  tooltip.textContent = measureWidth +" x "+ measureHeight;
   dimensions.appendChild(tooltip);
+
+  var tooltipY = document.createElement('div');
+  tooltipY.className = 'tooltip y';
+  tooltipY.textContent = measureHeight;
+  // dimensions.appendChild(tooltipY);
+
+  // yAxis = document.createElement('div');
+  // yAxis.className = 'y axis top';
+  // yAxis.style.top = -distances.top + "px";
+  // yAxis.style.height = (distances.top - (yTextStart + textHeight)) + "px";
+  // dimensions.appendChild(yAxis);
+
+  // xAxis = document.createElement('div');
+  // xAxis.className = 'x axis right';
+  // xAxis.style.left = (xTextStart + textWidth) + "px";
+  // xAxis.style.width = (distances.right - (xTextStart + textWidth)) + "px";
+  // dimensions.appendChild(xAxis);
 
   holder.appendChild(dimensions);
 }
@@ -170,8 +194,8 @@ function showDistances(event){
 //
 
 function drawCanvas(){
-  var canvas = document.createElement('canvas');
-  var ctx = canvas.getContext('2d');
+  canvas = document.createElement('canvas');
+  ctx = canvas.getContext('2d');
 
   // adjust the canvas size to the image size
   width = canvas.width = holder.clientWidth;
@@ -220,10 +244,9 @@ function drawCanvas(){
   
   // read out the image data from the canvas
   var imgData = ctx.getImageData(0, 0, width, height).data;
-  console.log(imgData);
   
   worker = new Worker("js/worker.js");
-  worker.onmessage = showDistances;
+  worker.onmessage = receiveMessage;
   worker.postMessage({ 
     type: 'imgData',
     imgData: imgData.buffer,  
@@ -232,19 +255,45 @@ function drawCanvas(){
     threshold: threshold
   }, [imgData.buffer]);
 
-  // debug
-  //holder.appendChild(canvas);
-
   holder.onmousemove = storeMousePos;
   holder.ontouchmove = storeMousePos;
 
   holder.onmouseleave = removeDimensions;
-  
+
+  // worker.postMessage({ type: 'debug' });
+
   worker.postMessage({ 
     type: 'position', 
     x: holder.clientWidth/2 - 210, 
     y: holder.clientHeight/2 - 150
   });
+}
+
+function receiveMessage(event){
+  switch(event.data.type){
+    case "distances": 
+      showDistances(event.data.distances);
+      break;
+    case "debug":
+      debugCanvas(event.data.data);
+      break;
+  }
+}
+
+function debugCanvas(binaries){
+  var imgData = ctx.createImageData(width, height);
+
+  for(var i=0, x=0, l=imgData.data.length; i<l; i+=4, x++){
+    var gray = binaries[x];
+    imgData.data[i]   = gray;
+    imgData.data[i+1] = gray;
+    imgData.data[i+2] = gray;
+    imgData.data[i+3] = 255;
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  
+  holder.appendChild(canvas);
 }
 
 // by visionmedia (TJ Holowaychuk)

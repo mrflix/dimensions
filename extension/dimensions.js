@@ -111,6 +111,7 @@ var dimensions = {
       bottom: { x:  0, y:  1 },
       left:   { x: -1, y:  0 }
     }
+    var area = 0;
     var lightness = this.getLightnessAt(input.x, input.y);
 
     for(var direction in distances){
@@ -118,15 +119,57 @@ var dimensions = {
       var boundaryFound = false;
       var sx = input.x;
       var sy = input.y;
+      var l;
 
       while(!boundaryFound){
         sx += vector.x;
         sy += vector.y;
+        l = this.getLightnessAt(sx, sy);
 
-        if(this.inBoundaries(sx, sy) && Math.abs(this.getLightnessAt(sx, sy) - lightness) < this.threshold){
+        if(l && Math.abs(l - lightness) < this.threshold){
           distances[direction]++;
         } else {
           boundaryFound = true;
+        }
+      }
+      
+      area += distances[direction];
+    }
+
+    if(area <= 6){
+      distances = { top: 0, right: 0, bottom: 0, left: 0 };
+      var similarColorStreakThreshold = 8;
+
+      for(var direction in distances){
+        var vector = directions[direction];
+        var boundaryFound = false;
+        var sx = input.x;
+        var sy = input.y;
+        var currentLightness;
+        var lastLightness = lightness;
+        var similarColorStreak = 0;
+
+        while(!boundaryFound){
+          sx += vector.x;
+          sy += vector.y;
+          currentLightness = this.getLightnessAt(sx, sy);
+
+          if(currentLightness){
+            distances[direction]++;
+
+            if(Math.abs(currentLightness - lastLightness) < this.threshold){
+              similarColorStreak++;
+              if(similarColorStreak === similarColorStreakThreshold){ 
+                distances[direction] -= (similarColorStreakThreshold+1);
+                boundaryFound = true;
+              }
+            } else {
+              lastLightness = currentLightness;
+              similarColorStreak = 0;
+            }
+          } else {
+            boundaryFound = true;
+          }
         }
       }
     }
@@ -141,7 +184,7 @@ var dimensions = {
   },
 
   getLightnessAt: function(x, y){
-    return this.data[y * this.width + x];
+    return this.inBoundaries(x, y) ? this.data[y * this.width + x] : -1;
   },
 
   //

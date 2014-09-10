@@ -17,13 +17,18 @@
   position: absolute;
   left: 5px;
   bottom: 4px;
+  padding: 0 5px;
   color: white;
-  padding: 2px 5px;
+  text-align: center;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: 12px;
+  line-height: 20px;
   font-family: sans-serif;
   border-radius: 3px;
   background: hsla(205,100%,10%,.55);
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
 }
 
   .fn-tooltip.left {
