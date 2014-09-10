@@ -1,4 +1,6 @@
-dimensions
+Dimensions
 ==========
 
-A tool for designers to measure screen dimensions.
+A browser extension for coders to measure screen dimensions.
+
+![Dimensions screenshot](/_sources/screenshot.png?raw=true)
