@@ -127,7 +127,9 @@ function showDimensions(dimensions){
 
   var tooltip = document.createElement('div');
   tooltip.className = 'fn-tooltip';
-  tooltip.textContent = measureWidth +" x "+ measureHeight + " px";
+
+  // add +1 on both axis because of the pixel below the mouse pointer
+  tooltip.textContent = (measureWidth+1) +" x "+ (measureHeight+1) + " px";
 
   if(dimensions.y < 26)
     tooltip.classList.add('bottom');
