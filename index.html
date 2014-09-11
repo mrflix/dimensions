@@ -161,25 +161,12 @@ function showDistances(distances){
   var tooltip = document.createElement('div');
   tooltip.className = 'tooltip';
   // tooltip.style.width = textWidth + "px";
-  tooltip.textContent = measureWidth +" x "+ measureHeight;
+  tooltip.textContent = (measureWidth+1) +" x "+ (measureHeight+1);
   dimensions.appendChild(tooltip);
 
   var tooltipY = document.createElement('div');
   tooltipY.className = 'tooltip y';
   tooltipY.textContent = measureHeight;
-  // dimensions.appendChild(tooltipY);
-
-  // yAxis = document.createElement('div');
-  // yAxis.className = 'y axis top';
-  // yAxis.style.top = -distances.top + "px";
-  // yAxis.style.height = (distances.top - (yTextStart + textHeight)) + "px";
-  // dimensions.appendChild(yAxis);
-
-  // xAxis = document.createElement('div');
-  // xAxis.className = 'x axis right';
-  // xAxis.style.left = (xTextStart + textWidth) + "px";
-  // xAxis.style.width = (distances.right - (xTextStart + textWidth)) + "px";
-  // dimensions.appendChild(xAxis);
 
   holder.appendChild(dimensions);
 }
