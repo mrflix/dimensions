@@ -80,7 +80,7 @@ function resume(){
 function onInputMove(event){
   var x, y;
 
-  if('ontouchstart' in window){
+  if(event.touches){
     x = event.touches[0].clientX;
     y = event.touches[0].clientY;
   } else {
