@@ -234,13 +234,13 @@ var dimensions = {
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d');
 
-    // adjust the canvas size to the image size
-    this.width = canvas.width = this.image.width;
-    this.height = canvas.height = this.image.height;
-    
+    // adjust the canvas size to the tab size
+    this.width = canvas.width = this.tab.width;
+    this.height = canvas.height = this.tab.height;
+
     // draw the image to the canvas
-    ctx.drawImage(this.image, 0, 0);
-    
+    ctx.drawImage(this.image, 0, 0, this.width, this.height);
+
     // read out the image data from the canvas
     var imgData = ctx.getImageData(0, 0, this.width, this.height).data;
 
