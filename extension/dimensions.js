@@ -28,11 +28,17 @@ chrome.runtime.onConnect.addListener(function(port) {
   tabs[ port.sender.tab.id ].initialize(port);
 });
 
+chrome.runtime.onSuspend.addListener(function() {
+  for(var tabId in tabs){
+    tabs[tabId].deactivate();
+  }
+});
+
 
 
 var dimensions = {
   image: new Image(),
-  threshold: 7,
+  threshold: 6,
   takingScreenshot: false,
 
   activate: function(id){
@@ -51,7 +57,7 @@ var dimensions = {
   },
 
   deactivate: function(){
-    this.port.postMessage({ type: 'destroyTooltip' });
+    this.port.postMessage({ type: 'destroy' });
     chrome.browserAction.setIcon({  
       tabId: this.id,
       path: {
@@ -59,8 +65,6 @@ var dimensions = {
         38: "images/icon@2x.png"
       }
     });
-
-    this.data = [];
   },
 
   initialize: function(port){
@@ -78,9 +82,6 @@ var dimensions = {
         break;
       case 'newScreenshot':
         this.takeScreenshot();
-        break;
-      case 'destroy':
-        this.removeTab(this.id);
         break;
     }
   },
@@ -114,7 +115,6 @@ var dimensions = {
     var y0 = pos.y;
     var map = new Int16Array(this.data);
     var area = { top: y0, right: x0, bottom: y0, left: x0 };
-    var stack = [[x0, y0]];
     var pixelsInArea = [];
     var boundaries = { vertical: [], horizontal: [] };
     var maxArea = 5000000;
@@ -122,7 +122,7 @@ var dimensions = {
     var i = 0;
 
     var startLightness = this.getLightnessAt(map, x0, y0);
-    var lastLightness;
+    var stack = [[x0, y0, startLightness]];
 
     while(stack.length){
       if(++i > maxArea){
@@ -130,10 +130,12 @@ var dimensions = {
         break;
       }
 
-      var xy = stack.shift();
-      var x = xy[0];
-      var y = xy[1];
-      currentLightness = this.getLightnessAt(this.data, x, y);
+      var xyl = stack.shift();
+      var x = xyl[0];
+      var y = xyl[1];
+      var lastLightness = xyl[2];
+      
+      currentLightness = this.getLightnessAt(map, x, y);
 
       if(currentLightness && Math.abs(currentLightness - lastLightness) < this.threshold){
         this.setLightnessAt(map, x, y, 999);
@@ -148,12 +150,10 @@ var dimensions = {
         else if(y > area.bottom)
           area.bottom = y;
 
-        stack.push([x-1, y  ]);
-        stack.push([x  , y+1]);
-        stack.push([x+1, y  ]);
-        stack.push([x  , y-1]);
-        
-        lastLightness = currentLightness;
+        stack.push([x-1, y  , currentLightness]);
+        stack.push([x  , y+1, currentLightness]);
+        stack.push([x+1, y  , currentLightness]);
+        stack.push([x  , y-1, currentLightness]);
       }
     }
 

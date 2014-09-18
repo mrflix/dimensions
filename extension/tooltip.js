@@ -1,3 +1,4 @@
+var html = document.querySelector('html');
 var body = document.querySelector('body');
 var port = chrome.runtime.connect({ name: "dimensions" });
 var changeDelay = 300;
@@ -5,16 +6,21 @@ var changeTimeout;
 var paused = false;
 var inputX, inputY;
 var altKeyWasPressed = false;
+var connectionClosed = false;
+
+html.classList.add('fn-noCursor');
 
 window.addEventListener('mousemove', onInputMove);
 window.addEventListener('touchmove', onInputMove);
-window.addEventListener('scroll', onAreaChange);
-window.addEventListener('unload', onUnloadEvent);
+window.addEventListener('scroll', onVisibleAreaChange);
 
 window.addEventListener('keydown', detectAltKeyPress);
 window.addEventListener('keyup', detectAltKeyRelease);
 
 port.onMessage.addListener(function(event){
+  if(connectionClosed)
+    return;
+
   switch(event.type){
     case 'distances':
       showDimensions(event.data);
@@ -23,26 +29,28 @@ port.onMessage.addListener(function(event){
       resume();
       // debugScreenshot(event.data);
       break;
-    case 'destroyTooltip':
+    case 'destroy':
       destroy();
       break;
   }
 });
 
 function debugScreenshot(src){
-  var oldscreen = body.querySelector('.screenshot');
+  var oldscreen = body.querySelector('.fn-screenshot');
   oldscreen && body.removeChild(oldscreen);
 
   var screenshot = new Image();
   screenshot.src = src;
-  screenshot.className = 'screenshot';
+  screenshot.className = 'fn-screenshot';
   body.appendChild(screenshot);
 }
 
 function destroy(){
+  connectionClosed = true;
+  body.classList.remove('fn-noCursor');
   window.removeEventListener('mousemove', onInputMove);
   window.removeEventListener('touchmove', onInputMove);
-  window.removeEventListener('scroll', onAreaChange);
+  window.removeEventListener('scroll', onVisibleAreaChange);
 
   removeDimensions();
 }
@@ -53,17 +61,13 @@ function removeDimensions(){
     body.removeChild(dimensions);
 }
 
-function onAreaChange(){
+function onVisibleAreaChange(){
   pause();
 
   if(changeTimeout)
     clearTimeout(changeTimeout);
 
   changeTimeout = setTimeout(requestNewScreenshot, changeDelay);
-}
-
-function onUnloadEvent(){
-  port.postMessage({ type: 'destroy' });
 }
 
 function requestNewScreenshot(){
@@ -73,10 +77,12 @@ function requestNewScreenshot(){
 function pause(){
   paused = true;
   removeDimensions();
+  html.classList.remove('fn-noCursor');
 }
 
 function resume(){
   paused = false;
+  html.classList.add('fn-noCursor');
 }
 
 function detectAltKeyPress(event){
