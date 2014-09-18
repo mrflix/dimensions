@@ -1,4 +1,4 @@
-var data, width, height, threshold;
+var data, width, height, threshold, runMeasureAreaProcess;
 
 onmessage = function(event){
   switch(event.data.type){
@@ -14,6 +14,13 @@ onmessage = function(event){
         distances: measureDistances(event.data.x, event.data.y)
       });
       break;
+    case "area":
+      runMeasureAreaProcess = false;
+      postMessage({
+        type: "distances",
+        distances: measureArea(event.data.x, event.data.y)
+      });
+      break;
     case "debug":
       postMessage({
         type: "debug",
@@ -22,6 +29,87 @@ onmessage = function(event){
       break;
   }
 }
+
+//
+// measureArea
+// ===========
+//  
+// measures the area around pageX and pageY.
+//
+//
+
+function measureArea(x0, y0){
+  var map = new Int16Array(data);
+  var area = { top: y0, right: x0, bottom: y0, left: x0 };
+  var lightness = getLightnessAt(map, x0, y0);
+  var stack = [[x0, y0]];
+  var pixelsInArea = [];
+  var boundaries = { vertical: [], horizontal: [] };
+  runMeasureAreaProcess = true;
+  var maxArea = 500000;
+  var i = 0;
+
+  while(runMeasureAreaProcess && stack.length){
+    if(++i > maxArea)
+      return false;
+
+    var xy = stack.shift();
+    var x = xy[0];
+    var y = xy[1];
+    var currentLightness = getLightnessAt(map, x, y);
+
+    if(currentLightness && Math.abs(currentLightness - lightness) < threshold){
+      setLightnessAt(map, x, y, 999);
+      pixelsInArea.push([x,y]);
+
+      if(x < area.left)
+        area.left = x;
+      else if(x > area.right)
+        area.right = x;
+      if(y < area.top)
+        area.top = y;
+      else if(y > area.bottom)
+        area.bottom = y;
+
+      stack.push([x-1, y  ]);
+      stack.push([x  , y+1]);
+      stack.push([x+1, y  ]);
+      stack.push([x  , y-1]);
+    }
+  }
+
+  for(var i=0, l=pixelsInArea.length; i<l; i++){
+    var x = pixelsInArea[i][0];
+    var y = pixelsInArea[i][1];
+
+    if(x === area.left || x === area.right)
+      boundaries.vertical.push(y);
+    if(y === area.top || y === area.bottom)
+      boundaries.horizontal.push(x);
+  }
+
+  area.x = getAverage(boundaries.horizontal);
+  area.y = getAverage(boundaries.vertical);
+
+  area.left = area.x - area.left;
+  area.right = area.right - area.x;
+  area.top = area.y - area.top;
+  area.bottom = area.bottom - area.y;
+
+  return area;
+}
+
+
+function getAverage(values){
+  var i = values.length,
+    sum = 0;
+  while (i--) {
+    sum = sum + values[i];
+  }
+
+  return Math.floor(sum/values.length);
+}
+
 
 //
 // measureDistances
@@ -43,7 +131,7 @@ function measureDistances(x, y){
     bottom: { x: 0, y: 1 },
     left: { x: -1, y: 0 }
   }
-  var lightness = getLightnessAt(x, y);
+  var lightness = getLightnessAt(data, x, y);
 
   if(lightness === 68)
     return false;
@@ -59,7 +147,7 @@ function measureDistances(x, y){
     while(!boundaryFound){
       sx += vector.x;
       sy += vector.y;
-      currentLightness = getLightnessAt(sx, sy);
+      currentLightness = getLightnessAt(data, sx, sy);
 
       if(currentLightness && Math.abs(currentLightness - lightness) < threshold){
         distances[direction]++;
@@ -86,7 +174,7 @@ function measureDistances(x, y){
       while(!boundaryFound){
         sx += vector.x;
         sy += vector.y;
-        currentLightness = getLightnessAt(sx, sy);
+        currentLightness = getLightnessAt(data, sx, sy);
 
         if(currentLightness){
           distances[direction]++;
@@ -114,8 +202,12 @@ function measureDistances(x, y){
   return distances;
 }
 
-function getLightnessAt(x, y){
-  return inBoundaries(x, y) ? data[y * width + x] : -1;
+function getLightnessAt(I, x, y){
+  return inBoundaries(x, y) ? I[y * width + x] : -1;
+}
+
+function setLightnessAt(I, x, y, value){
+  return inBoundaries(x, y) ? I[y * width + x] = value : -1;
 }
 
 //

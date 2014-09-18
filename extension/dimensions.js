@@ -2,40 +2,21 @@ var tabs = {};
 
 function toggle(tab){
   if(!tabs[tab.id])
-    activate(tab);
+    addTab(tab.id);
   else
-    deactivate(tab);
+    removeTab(tab.id);
 }
 
-function activate(tab){
-  tabs[tab.id] = Object.create(dimensions);
-  tabs[tab.id].takeScreenshot();
-
-  chrome.tabs.insertCSS({ file: 'tooltip.css' });
-  chrome.tabs.executeScript({ file: 'tooltip.js' });
-  chrome.browserAction.setIcon({ 
-    tabId: tab.id,
-    path: {
-      19: "images/icon_active.png",
-      38: "images/icon_active@2x.png"
-    }
-  });
+function addTab(id){
+  tabs[id] = Object.create(dimensions);
+  tabs[id].activate(id);
 }
 
-function deactivate(tab){
-  chrome.browserAction.setIcon({  
-    tabId: tab.id,
-    path: {
-      19: "images/icon.png",
-      38: "images/icon@2x.png"
-    }
-  });
-
-  tabs[tab.id].port.postMessage({ type: 'destroy' });
-  tabs[tab.id].data = [];
+function removeTab(id){
+  tabs[id].deactivate();
 
   for(var tabId in tabs){
-    if(tabId == tab.id)
+    if(tabId == id)
       delete tabs[tabId];
   }
 }
@@ -44,18 +25,45 @@ chrome.commands.onCommand.addListener(toggle);
 chrome.browserAction.onClicked.addListener(toggle);
 
 chrome.runtime.onConnect.addListener(function(port) {
-  tabs[ port.sender.tab.id ].initialize(port, port.sender.tab);
+  tabs[ port.sender.tab.id ].initialize(port);
 });
 
 
 
 var dimensions = {
   image: new Image(),
-  threshold: 6,
+  threshold: 7,
   takingScreenshot: false,
 
-  initialize: function(port, tab){
-    this.tab = tab;
+  activate: function(id){
+    this.id = id;
+    this.takeScreenshot();
+
+    chrome.tabs.insertCSS(this.id, { file: 'tooltip.css' });
+    chrome.tabs.executeScript(this.id, { file: 'tooltip.js' });
+    chrome.browserAction.setIcon({ 
+      tabId: this.id,
+      path: {
+        19: "images/icon_active.png",
+        38: "images/icon_active@2x.png"
+      }
+    });
+  },
+
+  deactivate: function(){
+    this.port.postMessage({ type: 'destroyTooltip' });
+    chrome.browserAction.setIcon({  
+      tabId: this.id,
+      path: {
+        19: "images/icon.png",
+        38: "images/icon@2x.png"
+      }
+    });
+
+    this.data = [];
+  },
+
+  initialize: function(port){
     this.port = port;
     port.onMessage.addListener(this.receiveMessage.bind(this));
   },
@@ -65,11 +73,15 @@ var dimensions = {
       case 'position':
         this.measureDistances(event.data);
         break;
-      case 'scroll':
+      case "area":
+        this.measureArea(event.data);
+        break;
+      case 'newScreenshot':
         this.takeScreenshot();
         break;
       case 'destroy':
-        deactivate(this.tab);
+        this.removeTab(this.id);
+        break;
     }
   },
 
@@ -85,6 +97,99 @@ var dimensions = {
     // the first time we don't have a port connection yet
     if(this.port)
       this.port.postMessage({ type: 'screenshot taken', data: this.image.src });
+  },
+
+  //
+  // measureArea
+  // ===========
+  //  
+  // measures the area around pageX and pageY.
+  //
+  //
+  measureArea: function(pos){
+    if(this.takingScreenshot)
+      return;
+
+    var x0 = pos.x;
+    var y0 = pos.y;
+    var map = new Int16Array(this.data);
+    var area = { top: y0, right: x0, bottom: y0, left: x0 };
+    var stack = [[x0, y0]];
+    var pixelsInArea = [];
+    var boundaries = { vertical: [], horizontal: [] };
+    var maxArea = 5000000;
+    var areaFound = true;
+    var i = 0;
+
+    var startLightness = this.getLightnessAt(map, x0, y0);
+    var lastLightness;
+
+    while(stack.length){
+      if(++i > maxArea){
+        areaFound = false;
+        break;
+      }
+
+      var xy = stack.shift();
+      var x = xy[0];
+      var y = xy[1];
+      currentLightness = this.getLightnessAt(this.data, x, y);
+
+      if(currentLightness && Math.abs(currentLightness - lastLightness) < this.threshold){
+        this.setLightnessAt(map, x, y, 999);
+        pixelsInArea.push([x,y]);
+
+        if(x < area.left)
+          area.left = x;
+        else if(x > area.right)
+          area.right = x;
+        if(y < area.top)
+          area.top = y;
+        else if(y > area.bottom)
+          area.bottom = y;
+
+        stack.push([x-1, y  ]);
+        stack.push([x  , y+1]);
+        stack.push([x+1, y  ]);
+        stack.push([x  , y-1]);
+        
+        lastLightness = currentLightness;
+      }
+    }
+
+    for(var i=0, l=pixelsInArea.length; i<l; i++){
+      var x = pixelsInArea[i][0];
+      var y = pixelsInArea[i][1];
+
+      if(x === area.left || x === area.right)
+        boundaries.vertical.push(y);
+      if(y === area.top || y === area.bottom)
+        boundaries.horizontal.push(x);
+    }
+
+    area.x = this.getAverage(boundaries.horizontal);
+    area.y = this.getAverage(boundaries.vertical);
+
+    area.left = area.x - area.left;
+    area.right = area.right - area.x;
+    area.top = area.y - area.top;
+    area.bottom = area.bottom - area.y;
+
+    this.port.postMessage({
+      type: 'distances',
+      data: areaFound ? area : false
+    });
+  },
+
+
+  getAverage: function(values){
+    var i = values.length,
+      sum = 0;
+    while (i--) {
+      sum = sum + values[i];
+    }
+
+    return Math.floor(sum/values.length);
   },
 
   //
@@ -112,22 +217,27 @@ var dimensions = {
       left:   { x: -1, y:  0 }
     }
     var area = 0;
-    var lightness = this.getLightnessAt(input.x, input.y);
+    var startLightness = this.getLightnessAt(this.data, input.x, input.y);
+    var lastLightness;
 
     for(var direction in distances){
       var vector = directions[direction];
       var boundaryFound = false;
       var sx = input.x;
       var sy = input.y;
-      var l;
+      var currentLightness;
+
+      // reset lightness to start lightness
+      lastLightness = startLightness;
 
       while(!boundaryFound){
         sx += vector.x;
         sy += vector.y;
-        l = this.getLightnessAt(sx, sy);
+        currentLightness = this.getLightnessAt(this.data, sx, sy);
 
-        if(l && Math.abs(l - lightness) < this.threshold){
+        if(currentLightness && Math.abs(currentLightness - lastLightness) < this.threshold){
           distances[direction]++;
+          lastLightness = currentLightness;
         } else {
           boundaryFound = true;
         }
@@ -146,13 +256,14 @@ var dimensions = {
         var sx = input.x;
         var sy = input.y;
         var currentLightness;
-        var lastLightness = lightness;
         var similarColorStreak = 0;
+
+        lastLightness = startLightness;
 
         while(!boundaryFound){
           sx += vector.x;
           sy += vector.y;
-          currentLightness = this.getLightnessAt(sx, sy);
+          currentLightness = this.getLightnessAt(this.data, sx, sy);
 
           if(currentLightness){
             distances[direction]++;
@@ -183,8 +294,12 @@ var dimensions = {
     });
   },
 
-  getLightnessAt: function(x, y){
-    return this.inBoundaries(x, y) ? this.data[y * this.width + x] : -1;
+  getLightnessAt: function(data, x, y){
+    return this.inBoundaries(x, y) ? data[y * this.width + x] : -1;
+  },
+
+  setLightnessAt: function(data, x, y, value){
+    return this.inBoundaries(x, y) ? data[y * this.width + x] = value : -1;
   },
 
   //

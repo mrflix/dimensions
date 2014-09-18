@@ -62,6 +62,8 @@ var virgin = true;
 var worker;
 var isTouch = 'ontouchstart' in window;
 var canvas, ctx;
+var inputX, inputY;
+var altKeyWasPressed = false;
 
 if(isTouch)
   holder.classList.add('touch');
@@ -91,10 +93,8 @@ function render(){
   });
 }
 
-function storeMousePos(event){
+function storeInputPos(event){
   event.preventDefault();
-
-  var x, y;
 
   if(virgin){
     virgin = false;
@@ -102,17 +102,21 @@ function storeMousePos(event){
   }
 
   if(event.touches){
-    x = event.touches[0].pageX;
-    y = event.touches[0].pageY;
+    inputX = event.touches[0].pageX;
+    inputY = event.touches[0].pageY;
   } else {
-    x = event.pageX;
-    y = event.pageY;
+    inputX = event.pageX;
+    inputY = event.pageY;
   }
 
+  sendToWorker(event);
+}
+
+function sendToWorker(event){
   worker.postMessage({ 
-    type: 'position', 
-    x: x, 
-    y: y
+    type: event.altKey ? 'area' : 'position', 
+    x: inputX, 
+    y: inputY
   });
 }
 
@@ -170,7 +174,6 @@ function showDistances(distances){
 
   holder.appendChild(dimensions);
 }
-
 
 
 //
@@ -242,8 +245,10 @@ function drawCanvas(){
     threshold: threshold
   }, [imgData.buffer]);
 
-  holder.onmousemove = storeMousePos;
-  holder.ontouchmove = storeMousePos;
+  holder.onmousemove = storeInputPos;
+  holder.ontouchmove = storeInputPos;
+  window.addEventListener('keydown', detectAltKeyPress);
+  window.addEventListener('keyup', detectAltKeyRelease);
 
   holder.onmouseleave = removeDimensions;
 
@@ -254,6 +259,20 @@ function drawCanvas(){
     x: holder.clientWidth/2 - 210, 
     y: holder.clientHeight/2 - 150
   });
+}
+
+function detectAltKeyPress(event){
+  if(event.altKey){
+    altKeyWasPressed = true;
+    sendToWorker(event);
+  }
+}
+
+function detectAltKeyRelease(event){
+  if(altKeyWasPressed){
+    altKeyWasPressed = false;
+    sendToWorker(event);
+  }
 }
 
 function receiveMessage(event){

@@ -1,39 +1,48 @@
 var body = document.querySelector('body');
 var port = chrome.runtime.connect({ name: "dimensions" });
-var scrollDelay = 300;
-var scrollTimeout;
+var changeDelay = 300;
+var changeTimeout;
 var paused = false;
+var inputX, inputY;
+var altKeyWasPressed = false;
 
 window.addEventListener('mousemove', onInputMove);
 window.addEventListener('touchmove', onInputMove);
-window.addEventListener('scroll', onScrollEvent);
+window.addEventListener('scroll', onAreaChange);
 window.addEventListener('unload', onUnloadEvent);
+
+window.addEventListener('keydown', detectAltKeyPress);
+window.addEventListener('keyup', detectAltKeyRelease);
 
 port.onMessage.addListener(function(event){
   switch(event.type){
     case 'distances':
       showDimensions(event.data);
       break;
-    case 'destroy':
-      destroy();
-      break;
     case 'screenshot taken':
       resume();
-      // var oldscreen = body.querySelector('.screenshot');
-      // oldscreen && body.removeChild(oldscreen);
-
-      // var screenshot = new Image();
-      // screenshot.src = event.data;
-      // screenshot.className = 'screenshot';
-      // body.appendChild(screenshot);
+      // debugScreenshot(event.data);
+      break;
+    case 'destroyTooltip':
+      destroy();
       break;
   }
 });
 
+function debugScreenshot(src){
+  var oldscreen = body.querySelector('.screenshot');
+  oldscreen && body.removeChild(oldscreen);
+
+  var screenshot = new Image();
+  screenshot.src = src;
+  screenshot.className = 'screenshot';
+  body.appendChild(screenshot);
+}
+
 function destroy(){
   window.removeEventListener('mousemove', onInputMove);
   window.removeEventListener('touchmove', onInputMove);
-  window.removeEventListener('scroll', onScrollEvent);
+  window.removeEventListener('scroll', onAreaChange);
 
   removeDimensions();
 }
@@ -44,21 +53,21 @@ function removeDimensions(){
     body.removeChild(dimensions);
 }
 
-function onScrollEvent(){
+function onAreaChange(){
   pause();
 
-  if(scrollTimeout)
-    clearTimeout(scrollTimeout);
+  if(changeTimeout)
+    clearTimeout(changeTimeout);
 
-  scrollTimeout = setTimeout(sendScrollPosition, scrollDelay);
+  changeTimeout = setTimeout(requestNewScreenshot, changeDelay);
 }
 
 function onUnloadEvent(){
   port.postMessage({ type: 'destroy' });
 }
 
-function sendScrollPosition(){
-  port.postMessage({ type: 'scroll' });
+function requestNewScreenshot(){
+  port.postMessage({ type: 'newScreenshot' });
 }
 
 function pause(){
@@ -70,6 +79,20 @@ function resume(){
   paused = false;
 }
 
+function detectAltKeyPress(event){
+  if(event.altKey){
+    altKeyWasPressed = true;
+    sendToWorker(event);
+  }
+}
+
+function detectAltKeyRelease(event){
+  if(altKeyWasPressed){
+    altKeyWasPressed = false;
+    sendToWorker(event);
+  }
+}
+
 //
 // onInputMove
 // ===========
@@ -78,19 +101,21 @@ function resume(){
 //
 
 function onInputMove(event){
-  var x, y;
-
   if(event.touches){
-    x = event.touches[0].clientX;
-    y = event.touches[0].clientY;
+    inputX = event.touches[0].clientX;
+    inputY = event.touches[0].clientY;
   } else {
-    x = event.clientX;
-    y = event.clientY;
+    inputX = event.clientX;
+    inputY = event.clientY;
   }
 
+  sendToWorker(event);
+}
+
+function sendToWorker(event){
   port.postMessage({ 
-    type: 'position',
-    data: { x: x, y: y }
+    type: event.altKey ? 'area' : 'position', 
+    data: { x: inputX, y: inputY }
   });
 }
 
@@ -106,6 +131,9 @@ function showDimensions(dimensions){
     return;
 
   removeDimensions();
+
+  if(!dimensions)
+    return;
 
   var newDimensions = document.createElement('div');
   newDimensions.className = 'fn-dimensions';
