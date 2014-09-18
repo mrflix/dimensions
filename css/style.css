@@ -17,6 +17,7 @@ body {
 }
 
 header {
+  cursor: none;
   height: 480px;
   background: url(../img/header.png) no-repeat center;
   background-image: -webkit-image-set(url(../img/header.png) 1x, url(../img/header@2x.png) 2x);

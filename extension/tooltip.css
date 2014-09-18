@@ -1,3 +1,7 @@
+.fn-noCursor * {
+  cursor: none !important;
+}
+
 .fn-dimensions {
   position: fixed;
   width: 0;
