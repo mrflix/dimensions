@@ -1,4 +1,3 @@
-var html = document.querySelector('html');
 var body = document.querySelector('body');
 var port = chrome.runtime.connect({ name: "dimensions" });
 var changeDelay = 300;
@@ -7,8 +6,10 @@ var paused = false;
 var inputX, inputY;
 var altKeyWasPressed = false;
 var connectionClosed = false;
+var noCursor = document.createElement('div');
+noCursor.className = 'fn-noCursor';
 
-html.classList.add('fn-noCursor');
+disableCursor();
 
 window.addEventListener('mousemove', onInputMove);
 window.addEventListener('touchmove', onInputMove);
@@ -52,7 +53,7 @@ function destroy(){
   window.removeEventListener('scroll', onVisibleAreaChange);
 
   removeDimensions();
-  html.classList.remove('fn-noCursor');
+  enableCursor();
 }
 
 function removeDimensions(){
@@ -77,12 +78,20 @@ function requestNewScreenshot(){
 function pause(){
   paused = true;
   removeDimensions();
-  html.classList.remove('fn-noCursor');
+  enableCursor();
 }
 
 function resume(){
   paused = false;
-  html.classList.add('fn-noCursor');
+  disableCursor();
+}
+
+function disableCursor(){
+  body.appendChild(noCursor);
+}
+
+function enableCursor(){
+  body.removeChild(noCursor);
 }
 
 function detectAltKeyPress(event){
