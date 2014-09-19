@@ -1,4 +1,4 @@
-var areaThreshold = 3;
+var areaThreshold = 6;
 var dimensionsThreshold = 6;
 
 onmessage = function(event){
@@ -10,9 +10,11 @@ onmessage = function(event){
       postMessage({ type: "screenshot processed" });
       break;
     case 'distances':
+      measureAreaStopped = true;
       measureDistances(event.data.data);
       break;
     case "area":
+      measureAreaStopped = true;
       measureArea(event.data.data);
       break;
   }
@@ -27,56 +29,96 @@ onmessage = function(event){
 //
 //
 function measureArea(pos){
-  var x0 = pos.x;
-  var y0 = pos.y;
-  var map = new Int16Array(data);
-  var area = { top: y0, right: x0, bottom: y0, left: x0 };
-  var pixelsInArea = [];
-  var boundaries = { vertical: [], horizontal: [] };
+  var x0, y0, startLightness;
 
-  var startLightness = getLightnessAt(map, x0, y0);
-  var stack = [[x0, y0, startLightness]];
+  map = new Int16Array(data);
+  x0 = pos.x;
+  y0 = pos.y;
+  startLightness = getLightnessAt(map, x0, y0);
+  stack = [[x0, y0, startLightness]];
+  area = { top: y0, right: x0, bottom: y0, left: x0 };
+  pixelsInArea = [];
 
-  while(stack.length){
-    var xyl = stack.shift();
-    var x = xyl[0];
-    var y = xyl[1];
-    var lastLightness = xyl[2];
-    
-    currentLightness = getLightnessAt(map, x, y);
+  measureAreaStopped = false;
+  
+  setTimeout(nextTick, 0);
+}
 
-    if(currentLightness && Math.abs(currentLightness - lastLightness) < areaThreshold){
-      setLightnessAt(map, x, y, 999);
-      pixelsInArea.push([x,y]);
+function nextTick(){
+  workOffStack();
 
-      if(x < area.left)
-        area.left = x;
-      else if(x > area.right)
-        area.right = x;
-      if(y < area.top)
-        area.top = y;
-      else if(y > area.bottom)
-        area.bottom = y;
-
-      stack.push([x-1, y  , currentLightness]);
-      stack.push([x  , y+1, currentLightness]);
-      stack.push([x+1, y  , currentLightness]);
-      stack.push([x  , y-1, currentLightness]);
+  if(!measureAreaStopped){
+    if(stack.length){
+      setTimeout(nextTick, 0);
+    } else {
+      finishMeasureArea();
     }
   }
+}
+
+function workOffStack(){
+  var max = 500000;
+  var count = 0;
+
+  while(count++ < max && stack.length){
+    floodFill();
+  }
+}
+
+function floodFill(){
+  var xyl = stack.shift();
+  var x = xyl[0];
+  var y = xyl[1];
+  var lastLightness = xyl[2];
+  var currentLightness = getLightnessAt(map, x, y);
+
+  if(currentLightness && Math.abs(currentLightness - lastLightness) < areaThreshold){
+    setLightnessAt(map, x, y, 999);
+    pixelsInArea.push([x,y]);
+
+    stack.push([x-1, y  , currentLightness]);
+    stack.push([x  , y+1, currentLightness]);
+    stack.push([x+1, y  , currentLightness]);
+    stack.push([x  , y-1, currentLightness]);
+  }
+}
+
+function finishMeasureArea(){
+  var boundariePixels = { vertical: [], horizontal: [] };
+
+  // detect boundaries
+
+  for(var i=0, l=pixelsInArea.length; i<l; i++){
+    var x = pixelsInArea[i][0];
+    var y = pixelsInArea[i][1];
+
+    if(x < area.left)
+      area.left = x;
+    else if(x > area.right)
+      area.right = x;
+    if(y < area.top)
+      area.top = y;
+    else if(y > area.bottom)
+      area.bottom = y;
+  }
+
+  // find boundaries pixels
 
   for(var i=0, l=pixelsInArea.length; i<l; i++){
     var x = pixelsInArea[i][0];
     var y = pixelsInArea[i][1];
 
     if(x === area.left || x === area.right)
-      boundaries.vertical.push(y);
+      boundariePixels.vertical.push(y);
     if(y === area.top || y === area.bottom)
-      boundaries.horizontal.push(x);
+      boundariePixels.horizontal.push(x);
   }
 
-  area.x = getAverage(boundaries.horizontal);
-  area.y = getAverage(boundaries.vertical);
+  // center at boundarie pixel center
+  // e.g. in a circle this will center the area
+
+  area.x = getAverage(boundariePixels.horizontal);
+  area.y = getAverage(boundariePixels.vertical);
 
   area.left = area.x - area.left;
   area.right = area.right - area.x;
@@ -91,11 +133,11 @@ function measureArea(pos){
 
 
 function getAverage(values){
-  var i = values.length,
-    sum = 0;
-  while (i--) {
+  var i = values.length;
+  var sum = 0;
+
+  while(i--)
     sum = sum + values[i];
-  }
 
   return Math.floor(sum/values.length);
 }
