@@ -128,6 +128,9 @@ function onInputMove(event){
 }
 
 function sendToWorker(event){
+  if(paused)
+    return;
+  
   port.postMessage({ 
     type: event.altKey ? 'area' : 'position', 
     data: { x: inputX, y: inputY }
