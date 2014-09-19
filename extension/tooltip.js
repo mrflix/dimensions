@@ -47,12 +47,12 @@ function debugScreenshot(src){
 
 function destroy(){
   connectionClosed = true;
-  body.classList.remove('fn-noCursor');
   window.removeEventListener('mousemove', onInputMove);
   window.removeEventListener('touchmove', onInputMove);
   window.removeEventListener('scroll', onVisibleAreaChange);
 
   removeDimensions();
+  html.classList.remove('fn-noCursor');
 }
 
 function removeDimensions(){
