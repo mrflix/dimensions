@@ -63,7 +63,8 @@ function removeDimensions(){
 }
 
 function onVisibleAreaChange(){
-  pause();
+  if(!paused)
+    pause();
 
   if(changeTimeout)
     clearTimeout(changeTimeout);
@@ -72,7 +73,7 @@ function onVisibleAreaChange(){
 }
 
 function requestNewScreenshot(){
-  port.postMessage({ type: 'newScreenshot' });
+  port.postMessage({ type: 'take screenshot' });
 }
 
 function pause(){
@@ -130,7 +131,7 @@ function onInputMove(event){
 function sendToWorker(event){
   if(paused)
     return;
-  
+
   port.postMessage({ 
     type: event.altKey ? 'area' : 'position', 
     data: { x: inputX, y: inputY }

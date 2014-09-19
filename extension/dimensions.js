@@ -7,6 +7,7 @@ onmessage = function(event){
       data = grayscale( new Uint8ClampedArray(event.data.imgData) );
       width = event.data.width;
       height = event.data.height;
+      postMessage({ type: "screenshot processed" });
       break;
     case 'distances':
       measureDistances(event.data.data);

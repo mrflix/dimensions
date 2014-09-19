@@ -52,6 +52,9 @@ var dimensions = {
         38: "images/icon_active@2x.png"
       }
     });
+
+    this.worker = new Worker("dimensions.js");
+    this.worker.onmessage = this.receiveWorkerMessage.bind(this);
   },
 
   deactivate: function(){
@@ -68,9 +71,6 @@ var dimensions = {
   initialize: function(port){
     this.port = port;
     port.onMessage.addListener(this.receiveBrowserMessage.bind(this));
-
-    this.worker = new Worker("dimensions.js");
-    this.worker.onmessage = this.receiveWorkerMessage.bind(this);
   },
 
   receiveWorkerMessage: function(event){
@@ -80,6 +80,11 @@ var dimensions = {
           type: 'distances', 
           data: event.data.data 
         });
+        break;
+      case 'screenshot processed':
+        // the first time we don't have a port connection yet
+        if(this.port)
+          this.port.postMessage({ type: 'screenshot taken', data: this.image.src });
         break;
     }
   },
@@ -98,7 +103,7 @@ var dimensions = {
           data: event.data
         });
         break;
-      case 'newScreenshot':
+      case 'take screenshot':
         this.takeScreenshot();
         break;
     }
@@ -140,9 +145,5 @@ var dimensions = {
       width: canvas.width,
       height: canvas.height
     }, [imgData.buffer]);
-
-    // the first time we don't have a port connection yet
-    if(this.port)
-      this.port.postMessage({ type: 'screenshot taken', data: this.image.src });
   }
 };
