@@ -76,6 +76,15 @@ function floodFill(){
     setLightnessAt(map, x, y, 999);
     pixelsInArea.push([x,y]);
 
+    if(x < area.left)
+      area.left = x;
+    else if(x > area.right)
+      area.right = x;
+    if(y < area.top)
+      area.top = y;
+    else if(y > area.bottom)
+      area.bottom = y;
+
     stack.push([x-1, y  , currentLightness]);
     stack.push([x  , y+1, currentLightness]);
     stack.push([x+1, y  , currentLightness]);
@@ -85,22 +94,6 @@ function floodFill(){
 
 function finishMeasureArea(){
   var boundariePixels = { vertical: [], horizontal: [] };
-
-  // detect boundaries
-
-  for(var i=0, l=pixelsInArea.length; i<l; i++){
-    var x = pixelsInArea[i][0];
-    var y = pixelsInArea[i][1];
-
-    if(x < area.left)
-      area.left = x;
-    else if(x > area.right)
-      area.right = x;
-    if(y < area.top)
-      area.top = y;
-    else if(y > area.bottom)
-      area.bottom = y;
-  }
 
   // find boundaries pixels
 

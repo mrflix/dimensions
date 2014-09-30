@@ -6,14 +6,15 @@ var paused = false;
 var inputX, inputY;
 var altKeyWasPressed = false;
 var connectionClosed = false;
-var noCursor = document.createElement('div');
-noCursor.className = 'fn-noCursor';
+var overlay = document.createElement('div');
+overlay.className = 'fn-noCursor';
 
 disableCursor();
 
 window.addEventListener('mousemove', onInputMove);
 window.addEventListener('touchmove', onInputMove);
 window.addEventListener('scroll', onVisibleAreaChange);
+window.addEventListener('resize', onResizeWindow);
 
 window.addEventListener('keydown', detectAltKeyPress);
 window.addEventListener('keyup', detectAltKeyRelease);
@@ -35,6 +36,14 @@ port.onMessage.addListener(function(event){
       break;
   }
 });
+
+function onResizeWindow(){
+  overlay.width = window.innerWidth;
+  overlay.height = window.innerHeight;
+  onVisibleAreaChange();
+}
+
+onResizeWindow();
 
 function debugScreenshot(src){
   var oldscreen = body.querySelector('.fn-screenshot');
@@ -88,11 +97,11 @@ function resume(){
 }
 
 function disableCursor(){
-  body.appendChild(noCursor);
+  body.appendChild(overlay);
 }
 
 function enableCursor(){
-  body.removeChild(noCursor);
+  body.removeChild(overlay);
 }
 
 function detectAltKeyPress(event){

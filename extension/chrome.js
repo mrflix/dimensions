@@ -2,14 +2,14 @@ var tabs = {};
 
 function toggle(tab){
   if(!tabs[tab.id])
-    addTab(tab.id);
+    addTab(tab);
   else
     removeTab(tab.id);
 }
 
-function addTab(id){
-  tabs[id] = Object.create(dimensions);
-  tabs[id].activate(id);
+function addTab(tab){
+  tabs[tab.id] = Object.create(dimensions);
+  tabs[tab.id].activate(tab);
 }
 
 function removeTab(id){
@@ -38,15 +38,16 @@ chrome.runtime.onSuspend.addListener(function() {
 
 var dimensions = {
   image: new Image(),
+  canvas: document.createElement('canvas'),
 
-  activate: function(id){
-    this.id = id;
+  activate: function(tab){
+    this.tab = tab;
     this.takeScreenshot();
 
-    chrome.tabs.insertCSS(this.id, { file: 'tooltip.css' });
-    chrome.tabs.executeScript(this.id, { file: 'tooltip.js' });
+    chrome.tabs.insertCSS(this.tab.id, { file: 'tooltip.css' });
+    chrome.tabs.executeScript(this.tab.id, { file: 'tooltip.js' });
     chrome.browserAction.setIcon({ 
-      tabId: this.id,
+      tabId: this.tab.id,
       path: {
         19: "images/icon_active.png",
         38: "images/icon_active@2x.png"
@@ -60,7 +61,7 @@ var dimensions = {
   deactivate: function(){
     this.port.postMessage({ type: 'destroy' });
     chrome.browserAction.setIcon({  
-      tabId: this.id,
+      tabId: this.tab.id,
       path: {
         19: "images/icon.png",
         38: "images/icon@2x.png"
@@ -77,7 +78,7 @@ var dimensions = {
     switch(event.data.type){
       case 'distances':
         this.port.postMessage({ 
-          type: 'distances', 
+          type: event.data.type, 
           data: event.data.data 
         });
         break;
@@ -126,24 +127,23 @@ var dimensions = {
   //
 
   loadImage: function(){
-    var canvas = document.createElement('canvas');
-    var ctx = canvas.getContext('2d');
+    this.ctx = this.canvas.getContext('2d');
 
     // adjust the canvas size to the image size
-    canvas.width = this.image.width;
-    canvas.height = this.image.height;
+    this.canvas.width = this.image.width;
+    this.canvas.height = this.image.height;
     
     // draw the image to the canvas
-    ctx.drawImage(this.image, 0, 0);
+    this.ctx.drawImage(this.image, 0, 0);
     
     // read out the image data from the canvas
-    var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    imgData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height).data;
 
     this.worker.postMessage({ 
       type: 'imgData',
       imgData: imgData.buffer,  
-      width: canvas.width,
-      height: canvas.height
+      width: this.canvas.width,
+      height: this.canvas.height
     }, [imgData.buffer]);
   }
 };
