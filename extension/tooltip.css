@@ -41,6 +41,10 @@
           box-sizing: border-box;
 }
 
+  .altColor .fn-tooltip {
+    background: hsla(50,100%,10%,.55);
+  }
+
   .fn-tooltip.left {
     left: auto;
     right: 5px;
@@ -55,6 +59,10 @@
   position: absolute;
   background: hsla(205,100%,50%,.55);
 }
+
+  .altColor .fn-axis {
+    background: hsla(50,100%,50%,.55);
+  }
 
   .fn-axis:before,
   .fn-axis:after {

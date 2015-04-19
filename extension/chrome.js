@@ -42,7 +42,6 @@ var dimensions = {
 
   activate: function(tab){
     this.tab = tab;
-    this.takeScreenshot();
 
     chrome.tabs.insertCSS(this.tab.id, { file: 'tooltip.css' });
     chrome.tabs.executeScript(this.tab.id, { file: 'tooltip.js' });
@@ -79,13 +78,11 @@ var dimensions = {
       case 'distances':
         this.port.postMessage({ 
           type: event.data.type, 
-          data: event.data.data 
+          data: event.data.data
         });
         break;
       case 'screenshot processed':
-        // the first time we don't have a port connection yet
-        if(this.port)
-          this.port.postMessage({ type: 'screenshot taken', data: this.image.src });
+        this.port.postMessage({ type: 'screenshot taken', data: this.image.src });
         break;
     }
   },
@@ -137,7 +134,7 @@ var dimensions = {
     this.ctx.drawImage(this.image, 0, 0);
     
     // read out the image data from the canvas
-    imgData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height).data;
+    var imgData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height).data;
 
     this.worker.postMessage({ 
       type: 'imgData',

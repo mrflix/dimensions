@@ -4,7 +4,8 @@ var dimensionsThreshold = 6;
 onmessage = function(event){
   switch(event.data.type){
     case 'imgData':
-      data = grayscale( new Uint8ClampedArray(event.data.imgData) );
+      imgData = new Uint8ClampedArray(event.data.imgData);
+      data = grayscale( imgData );
       width = event.data.width;
       height = event.data.height;
       postMessage({ type: "screenshot processed" });
@@ -118,6 +119,8 @@ function finishMeasureArea(){
   area.top = area.y - area.top;
   area.bottom = area.bottom - area.y;
 
+  area.backgroundColor = getColorAt(area.x, area.y);
+
   postMessage({
     type: 'distances',
     data: area
@@ -227,11 +230,21 @@ function measureDistances(input){
 
   distances.x = input.x;
   distances.y = input.y;
+  distances.backgroundColor = getColorAt(input.x, input.y);
 
   postMessage({
     type: 'distances',
     data: distances
   });
+}
+
+function getColorAt(x, y){
+  if(!inBoundaries(x, y))
+    return -1;
+
+  var i = y * width * 4 + x * 4;
+
+  return rgbToHsl(imgData[i], imgData[++i], imgData[++i]);
 }
 
 function getLightnessAt(data, x, y){
@@ -241,6 +254,7 @@ function getLightnessAt(data, x, y){
 function setLightnessAt(data, x, y, value){
   return inBoundaries(x, y) ? data[y * width + x] = value : -1;
 }
+
 
 //
 // inBoundaries
@@ -275,4 +289,36 @@ function grayscale(imgData){
   }
 
   return gray;
+}
+
+/**
+ * Converts an RGB color value to HSL. Conversion formula
+ * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+ * Assumes r, g, and b are contained in the set [0, 255] and
+ * returns h, s, and l in the set [0, 1].
+ *
+ * @param   Number  r       The red color value
+ * @param   Number  g       The green color value
+ * @param   Number  b       The blue color value
+ * @return  Array           The HSL representation
+ */
+function rgbToHsl(r, g, b){
+  r /= 255, g /= 255, b /= 255;
+  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+  var h, s, l = (max + min) / 2;
+
+  if(max == min){
+    h = s = 0; // achromatic
+  }else{
+    var d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch(max){
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  return [h, s, l];
 }

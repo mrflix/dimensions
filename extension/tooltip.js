@@ -1,23 +1,30 @@
+var debug = false;
+
 var body = document.querySelector('body');
 var port = chrome.runtime.connect({ name: "dimensions" });
 var changeDelay = 300;
 var changeTimeout;
-var paused = false;
+var paused = true;
 var inputX, inputY;
 var altKeyWasPressed = false;
 var connectionClosed = false;
+var lineColor = getLineColor();
+var colorThreshold = [0.2,0.5,0.2];
 var overlay = document.createElement('div');
 overlay.className = 'fn-noCursor';
 
-disableCursor();
+function init(){
+  window.addEventListener('mousemove', onInputMove);
+  window.addEventListener('touchmove', onInputMove);
+  window.addEventListener('scroll', onVisibleAreaChange);
+  window.addEventListener('resize', onResizeWindow);
 
-window.addEventListener('mousemove', onInputMove);
-window.addEventListener('touchmove', onInputMove);
-window.addEventListener('scroll', onVisibleAreaChange);
-window.addEventListener('resize', onResizeWindow);
+  window.addEventListener('keydown', detectAltKeyPress);
+  window.addEventListener('keyup', detectAltKeyRelease);
 
-window.addEventListener('keydown', detectAltKeyPress);
-window.addEventListener('keyup', detectAltKeyRelease);
+  disableCursor();
+  requestNewScreenshot();
+}
 
 port.onMessage.addListener(function(event){
   if(connectionClosed)
@@ -29,7 +36,9 @@ port.onMessage.addListener(function(event){
       break;
     case 'screenshot taken':
       resume();
-      // debugScreenshot(event.data);
+
+      if(debug)
+        debugScreenshot(event.data);
       break;
     case 'destroy':
       destroy();
@@ -45,9 +54,14 @@ function onResizeWindow(){
 
 onResizeWindow();
 
-function debugScreenshot(src){
+function removeDebugScreenshot(){
   var oldscreen = body.querySelector('.fn-screenshot');
-  oldscreen && body.removeChild(oldscreen);
+  if(oldscreen)
+    oldscreen.parentNode.removeChild(oldscreen);
+}
+
+function debugScreenshot(src){
+  removeDebugScreenshot();
 
   var screenshot = new Image();
   screenshot.src = src;
@@ -62,6 +76,7 @@ function destroy(){
   window.removeEventListener('scroll', onVisibleAreaChange);
 
   removeDimensions();
+  removeDebugScreenshot();
   enableCursor();
 }
 
@@ -74,9 +89,14 @@ function removeDimensions(){
 function onVisibleAreaChange(){
   if(!paused)
     pause();
+  else
+    return;
 
   if(changeTimeout)
     clearTimeout(changeTimeout);
+
+  if(debug)
+    removeDebugScreenshot();
 
   changeTimeout = setTimeout(requestNewScreenshot, changeDelay);
 }
@@ -168,6 +188,13 @@ function showDimensions(dimensions){
   newDimensions.style.left = dimensions.x + "px";
   newDimensions.style.top = dimensions.y + "px";
 
+  console.log(lineColor, dimensions.backgroundColor);
+
+  if(Math.abs(dimensions.backgroundColor[0] - lineColor[0]) <= colorThreshold[0] &&
+      Math.abs(dimensions.backgroundColor[1] - lineColor[1]) <= colorThreshold[1] &&
+      Math.abs(dimensions.backgroundColor[2] - lineColor[2]) <= colorThreshold[2])
+    newDimensions.className += ' altColor';
+
   var measureWidth = dimensions.left + dimensions.right;
   var measureHeight = dimensions.top + dimensions.bottom;
 
@@ -197,5 +224,54 @@ function showDimensions(dimensions){
   newDimensions.appendChild(yAxis);
   newDimensions.appendChild(tooltip);
 
-  body.appendChild(newDimensions)
+  body.appendChild(newDimensions);
 }
+
+function getLineColor() {
+  var axis = document.createElement('div');
+  axis.className = 'fn-axis';
+
+  body.appendChild(axis);
+
+  var style = getComputedStyle(axis);
+  var rgbString = style.backgroundColor;
+  var colorsOnly = rgbString.substring(rgbString.indexOf('(') + 1, rgbString.lastIndexOf(')')).split(/,\s*/);
+
+  body.removeChild(axis);
+
+  return rgbToHsl(colorsOnly[0], colorsOnly[1], colorsOnly[2]);
+}
+
+/**
+ * Converts an RGB color value to HSL. Conversion formula
+ * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+ * Assumes r, g, and b are contained in the set [0, 255] and
+ * returns h, s, and l in the set [0, 1].
+ *
+ * @param   Number  r       The red color value
+ * @param   Number  g       The green color value
+ * @param   Number  b       The blue color value
+ * @return  Array           The HSL representation
+ */
+function rgbToHsl(r, g, b){
+  r /= 255, g /= 255, b /= 255;
+  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+  var h, s, l = (max + min) / 2;
+
+  if(max == min){
+    h = s = 0; // achromatic
+  }else{
+    var d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch(max){
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  return [h, s, l];
+}
+
+init();
