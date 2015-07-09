@@ -188,8 +188,6 @@ function showDimensions(dimensions){
   newDimensions.style.left = dimensions.x + "px";
   newDimensions.style.top = dimensions.y + "px";
 
-  console.log(lineColor, dimensions.backgroundColor);
-
   if(Math.abs(dimensions.backgroundColor[0] - lineColor[0]) <= colorThreshold[0] &&
       Math.abs(dimensions.backgroundColor[1] - lineColor[1]) <= colorThreshold[1] &&
       Math.abs(dimensions.backgroundColor[2] - lineColor[2]) <= colorThreshold[2])
