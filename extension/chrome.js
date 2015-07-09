@@ -127,11 +127,11 @@ var dimensions = {
     this.ctx = this.canvas.getContext('2d');
 
     // adjust the canvas size to the image size
-    this.canvas.width = this.image.width;
-    this.canvas.height = this.image.height;
+    this.canvas.width = this.tab.width;
+    this.canvas.height = this.tab.height;
     
     // draw the image to the canvas
-    this.ctx.drawImage(this.image, 0, 0);
+    this.ctx.drawImage(this.image, 0, 0, this.canvas.width, this.canvas.height);
     
     // read out the image data from the canvas
     var imgData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height).data;
