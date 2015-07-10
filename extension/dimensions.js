@@ -73,8 +73,8 @@ function floodFill(){
   var lastLightness = xyl[2];
   var currentLightness = getLightnessAt(map, x, y);
 
-  if(currentLightness && Math.abs(currentLightness - lastLightness) < areaThreshold){
-    setLightnessAt(map, x, y, 999);
+  if(currentLightness > -1 && Math.abs(currentLightness - lastLightness) < areaThreshold){
+    setLightnessAt(map, x, y, -1);
     pixelsInArea.push([x,y]);
 
     if(x < area.left)
@@ -178,7 +178,7 @@ function measureDistances(input){
       sy += vector.y;
       currentLightness = getLightnessAt(data, sx, sy);
 
-      if(currentLightness && Math.abs(currentLightness - lastLightness) < dimensionsThreshold){
+      if(currentLightness > -1 && Math.abs(currentLightness - lastLightness) < dimensionsThreshold){
         distances[direction]++;
         lastLightness = currentLightness;
       } else {
@@ -208,7 +208,7 @@ function measureDistances(input){
         sy += vector.y;
         currentLightness = getLightnessAt(data, sx, sy);
 
-        if(currentLightness){
+        if(currentLightness > -1){
           distances[direction]++;
 
           if(Math.abs(currentLightness - lastLightness) < dimensionsThreshold){
