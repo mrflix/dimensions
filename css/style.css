@@ -19,8 +19,7 @@ body {
 header {
   cursor: none;
   height: 480px;
-  background: url(../img/header.png) no-repeat center;
-  background-image: -webkit-image-set(url(../img/header.png) 1x, url(../img/header@2x.png) 2x);
+  background: url(../img/header.svg) no-repeat center;
   display: -webkit-flex;
   display:     -ms-flex;
   display:         flex;
@@ -123,6 +122,31 @@ a {
           flex: 0 1 50%;
   padding: 34px 55px;
   box-sizing: border-box;
+}
+
+.tag {
+  font-size: 12px;
+  color: gray;
+  display: inline-block;
+  padding: 3px 4px 1px;
+  border-radius: 2px;
+  border: 1px solid;
+  vertical-align: top;
+  margin: 0 4px;
+}
+
+.new.tag {
+  color: hsl(40,100%,50%);
+}
+
+kbd {
+  color: hsl(205,93%,62%);
+  border: 1px solid;
+  font-family: inherit;
+  padding: 3px 8px 0;
+  border-radius: 3px;
+  line-height: 1;
+  display: inline-block;
 }
 
 footer {
