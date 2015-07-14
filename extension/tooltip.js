@@ -43,7 +43,7 @@ port.onMessage.addListener(function(event){
       resume();
       break;
     case 'debug screen':
-      renderDebugScreenshot(event.visDataBuffer)
+      renderDebugScreenshot(event.map)
       break;
     case 'destroy':
       destroy();
@@ -67,16 +67,36 @@ function createDebugScreen(){
 }
 
 function removeDebugScreen(){
-  if(debug)
-    body.removeChild(body.querySelector('.fn-debugScreen'))
+  if(!debug || !debugScreen)
+    return;
+
+  body.removeChild(debugScreen);
 }
 
-function renderDebugScreenshot(visDataBuffer){
+function hideDebugScreen(){
+  if(!debug || !debugScreen)
+    return;
+
+  debugScreen.classList.add('is-hidden');
+}
+
+function renderDebugScreenshot(map) {
   debugScreen.setAttribute('width', window.innerWidth);
   debugScreen.setAttribute('height', window.innerHeight);
-  var visData = dsx.createImageData(window.innerWidth, window.innerHeight);
-  visData.data = new Uint8ClampedArray(visDataBuffer);
-  dsx.putImageData(visData, 0, 0);
+  debugScreen.classList.remove('is-hidden');
+
+  var visualization = dsx.createImageData(window.innerWidth, window.innerHeight);
+
+  for(var i=0, n=0, l=visualization.data.length; i<l; i++, n+= 4){
+    if(map && map[i] === 256) {
+      visualization.data[n] = 255; // r
+      visualization.data[n+1] = 0; // g
+      visualization.data[n+2] = 0; // b
+      visualization.data[n+3] = 128; // a
+    }
+  }
+
+  dsx.putImageData(visualization, 0, 0);
 }
 
 function destroy(){
@@ -142,6 +162,7 @@ function detectAltKeyRelease(event){
   if(altKeyWasPressed){
     altKeyWasPressed = false;
     sendToWorker(event);
+    hideDebugScreen();
   }
 }
 

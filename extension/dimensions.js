@@ -14,9 +14,6 @@ onmessage = function(event){
       width = event.data.width;
       height = event.data.height;
       postMessage({ type: "screenshot processed" });
-
-      if(debug)
-        sendDebugScreen()
       break;
     case 'position':
       measureAreaStopped = true;
@@ -35,36 +32,15 @@ onmessage = function(event){
 // ==========================
 //  
 // goals:
-//  - show grayscale version to check for weaknesess in the conversion
 //  - show area progress to debug the area detection flood fill
 //
 // returns imgData
 //
 
-function createDebugVisualization() {
-  var visData = new Uint8ClampedArray(imgData);
-  var color;
-
-  for(var i=0, n=0, l=data.length; i<l; i++, n+= 4){
-    if(map && map[i] > -1) {
-      color = [255,0,0]
-    } else {
-      color = [data[i],data[i],data[i]]
-    }
-    visData[n] = color[i]; // r
-    visData[n+1] = color[i+1]; // g
-    visData[n+2] = color[i+2]; // b
-    visData[n+3] = 255; // a
-  }
-
-  return visData;
-}
-
 function sendDebugScreen() {
-  var visData = createDebugVisualization()
   postMessage({ 
     type: 'debug screen',
-    visDataBuffer: visData.buffer
+    map: map
   })
 }
 
@@ -123,8 +99,8 @@ function floodFill(){
   var lastLightness = xyl[2];
   var currentLightness = getLightnessAt(map, x, y);
 
-  if(currentLightness > -1 && Math.abs(currentLightness - lastLightness) < areaThreshold){
-    setLightnessAt(map, x, y, -1);
+  if(currentLightness > -1 && currentLightness < 256 && Math.abs(currentLightness - lastLightness) < areaThreshold){
+    setLightnessAt(map, x, y, 256);
     pixelsInArea.push([x,y]);
 
     if(x < area.left)
@@ -187,6 +163,8 @@ function finishMeasureArea(){
   area.bottom = area.bottom - area.y;
 
   area.backgroundColor = getColorAt(area.x, area.y);
+
+  console.log(boundariePixels, x, y, area)
 
   postMessage({
     type: 'distances',
