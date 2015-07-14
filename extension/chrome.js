@@ -1,3 +1,4 @@
+var debug = false;
 var tabs = {};
 
 function toggle(tab){
@@ -55,6 +56,10 @@ var dimensions = {
 
     this.worker = new Worker("dimensions.js");
     this.worker.onmessage = this.receiveWorkerMessage.bind(this);
+    this.worker.postMessage({ 
+      type: 'init',
+      debug: debug 
+    });
   },
 
   deactivate: function(){
@@ -71,39 +76,31 @@ var dimensions = {
   initialize: function(port){
     this.port = port;
     port.onMessage.addListener(this.receiveBrowserMessage.bind(this));
+    this.port.postMessage({
+      type: 'init',
+      debug: debug
+    })
   },
 
   receiveWorkerMessage: function(event){
-    switch(event.data.type){
-      case 'distances':
-        this.port.postMessage({ 
-          type: event.data.type, 
-          data: event.data.data
-        });
-        break;
-      case 'screenshot processed':
-        this.port.postMessage({ type: 'screenshot taken', data: this.image.src });
-        break;
+    var forward = ['debug screen', 'distances', 'screenshot processed'];
+
+    if(forward.indexOf(event.data.type) > -1){
+      this.port.postMessage(event.data)
     }
   },
 
   receiveBrowserMessage: function(event){
-    switch(event.type){
-      case 'position':
-        this.worker.postMessage({
-          type: 'distances',
-          data: event.data
-        });
-        break;
-      case "area":
-        this.worker.postMessage({
-          type: 'area',
-          data: event.data
-        });
-        break;
-      case 'take screenshot':
-        this.takeScreenshot();
-        break;
+    var forward = ['position', 'area'];
+
+    if(forward.indexOf(event.type) > -1){
+      this.worker.postMessage(event)
+    } else {
+      switch(event.type){
+        case 'take screenshot':
+          this.takeScreenshot();
+          break;
+      }
     }
   },
 

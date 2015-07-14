@@ -1,16 +1,24 @@
 var areaThreshold = 6;
 var dimensionsThreshold = 6;
+var debug;
+var map;
 
 onmessage = function(event){
   switch(event.data.type){
+    case 'init':
+      debug = event.data.debug;
+      break;
     case 'imgData':
       imgData = new Uint8ClampedArray(event.data.imgData);
       data = grayscale( imgData );
       width = event.data.width;
       height = event.data.height;
       postMessage({ type: "screenshot processed" });
+
+      if(debug)
+        sendDebugScreen()
       break;
-    case 'distances':
+    case 'position':
       measureAreaStopped = true;
       measureDistances(event.data.data);
       break;
@@ -19,6 +27,45 @@ onmessage = function(event){
       measureArea(event.data.data);
       break;
   }
+}
+
+
+//
+// create debug visualization
+// ==========================
+//  
+// goals:
+//  - show grayscale version to check for weaknesess in the conversion
+//  - show area progress to debug the area detection flood fill
+//
+// returns imgData
+//
+
+function createDebugVisualization() {
+  var visData = new Uint8ClampedArray(imgData);
+  var color;
+
+  for(var i=0, n=0, l=data.length; i<l; i++, n+= 4){
+    if(map && map[i] > -1) {
+      color = [255,0,0]
+    } else {
+      color = [data[i],data[i],data[i]]
+    }
+    visData[n] = color[i]; // r
+    visData[n+1] = color[i+1]; // g
+    visData[n+2] = color[i+2]; // b
+    visData[n+3] = 255; // a
+  }
+
+  return visData;
+}
+
+function sendDebugScreen() {
+  var visData = createDebugVisualization()
+  postMessage({ 
+    type: 'debug screen',
+    visDataBuffer: visData.buffer
+  })
 }
 
 
@@ -47,6 +94,9 @@ function measureArea(pos){
 
 function nextTick(){
   workOffStack();
+
+  if(debug)
+    sendDebugScreen()
 
   if(!measureAreaStopped){
     if(stack.length){
@@ -94,26 +144,43 @@ function floodFill(){
 }
 
 function finishMeasureArea(){
-  var boundariePixels = { vertical: [], horizontal: [] };
+  var boundariePixels = { 
+    top: [],
+    right: [],
+    bottom: [],
+    left: []
+  };
 
-  // find boundaries pixels
+  // clear map
+  map = []
+
+  // find boundarie-pixels
 
   for(var i=0, l=pixelsInArea.length; i<l; i++){
     var x = pixelsInArea[i][0];
     var y = pixelsInArea[i][1];
 
-    if(x === area.left || x === area.right)
-      boundariePixels.vertical.push(y);
-    if(y === area.top || y === area.bottom)
-      boundariePixels.horizontal.push(x);
+    if(x === area.left)
+      boundariePixels.left.push(y);
+    if(x === area.right)
+      boundariePixels.right.push(y);
+
+    if(y === area.top)
+      boundariePixels.top.push(x);
+    if(y === area.bottom)
+      boundariePixels.bottom.push(x);
   }
 
-  // center at boundarie pixel center
-  // e.g. in a circle this will center the area
+  // place dimensions at the max spread point
+  // e.g.:
+  //  - in a circle it returns the center
+  //  - in a complex shape this might fail but it tries to get close enough
 
-  area.x = getAverage(boundariePixels.horizontal);
-  area.y = getAverage(boundariePixels.vertical);
+  var x = getMaxSpread(boundariePixels.top, boundariePixels.bottom);
+  var y = getMaxSpread(boundariePixels.left, boundariePixels.right);
 
+  area.x = x;
+  area.y = y;
   area.left = area.x - area.left;
   area.right = area.right - area.x;
   area.top = area.y - area.top;
@@ -128,14 +195,33 @@ function finishMeasureArea(){
 }
 
 
-function getAverage(values){
-  var i = values.length;
-  var sum = 0;
+function getMaxSpread(sideA, sideB){
+  var a = getDimensions(sideA);
+  var b = getDimensions(sideB);
 
-  while(i--)
-    sum = sum + values[i];
+  // favor the smaller side
+  var smallerSide = a.length < b.length ? a : b;
 
-  return Math.floor(sum/values.length);
+  return smallerSide.center;
+}
+
+function getDimensions(values){
+  var min = Infinity;
+  var max = 0;
+
+  for(var i=0, l=values.length; i<l; i++){
+    if(values[i] < min)
+      min = values[i]
+    if(values[i] > max)
+      max = values[i]
+  }
+
+  return {
+    min: min,
+    center: min + Math.floor((max - min)/2),
+    max: max,
+    length: max - min
+  }
 }
 
 //

@@ -1,5 +1,3 @@
-var debug = false;
-
 var body = document.querySelector('body');
 var port = chrome.runtime.connect({ name: "dimensions" });
 var changeDelay = 300;
@@ -12,6 +10,7 @@ var lineColor = getLineColor();
 var colorThreshold = [0.2,0.5,0.2];
 var overlay = document.createElement('div');
 overlay.className = 'fn-noCursor';
+var debug;
 
 function init(){
   window.addEventListener('mousemove', onInputMove);
@@ -31,14 +30,20 @@ port.onMessage.addListener(function(event){
     return;
 
   switch(event.type){
+    case 'init':
+      debug = event.debug;
+
+      if(debug)
+        createDebugScreen();
+      break;
     case 'distances':
       showDimensions(event.data);
       break;
-    case 'screenshot taken':
+    case 'screenshot processed':
       resume();
-
-      if(debug)
-        debugScreenshot(event.data);
+      break;
+    case 'debug screen':
+      renderDebugScreenshot(event.visDataBuffer)
       break;
     case 'destroy':
       destroy();
@@ -54,19 +59,24 @@ function onResizeWindow(){
 
 onResizeWindow();
 
-function removeDebugScreenshot(){
-  var oldscreen = body.querySelector('.fn-screenshot');
-  if(oldscreen)
-    oldscreen.parentNode.removeChild(oldscreen);
+function createDebugScreen(){
+  debugScreen = document.createElement('canvas');
+  dsx = debugScreen.getContext('2d');
+  debugScreen.className = 'fn-debugScreen';
+  body.appendChild(debugScreen);
 }
 
-function debugScreenshot(src){
-  removeDebugScreenshot();
+function removeDebugScreen(){
+  if(debug)
+    body.removeChild(body.querySelector('.fn-debugScreen'))
+}
 
-  var screenshot = new Image();
-  screenshot.src = src;
-  screenshot.className = 'fn-screenshot';
-  body.appendChild(screenshot);
+function renderDebugScreenshot(visDataBuffer){
+  debugScreen.setAttribute('width', window.innerWidth);
+  debugScreen.setAttribute('height', window.innerHeight);
+  var visData = dsx.createImageData(window.innerWidth, window.innerHeight);
+  visData.data = new Uint8ClampedArray(visDataBuffer);
+  dsx.putImageData(visData, 0, 0);
 }
 
 function destroy(){
@@ -75,8 +85,8 @@ function destroy(){
   window.removeEventListener('touchmove', onInputMove);
   window.removeEventListener('scroll', onVisibleAreaChange);
 
+  removeDebugScreen();
   removeDimensions();
-  removeDebugScreenshot();
   enableCursor();
 }
 
@@ -94,9 +104,6 @@ function onVisibleAreaChange(){
 
   if(changeTimeout)
     clearTimeout(changeTimeout);
-
-  if(debug)
-    removeDebugScreenshot();
 
   changeTimeout = setTimeout(requestNewScreenshot, changeDelay);
 }
@@ -125,7 +132,7 @@ function enableCursor(){
 }
 
 function detectAltKeyPress(event){
-  if(event.altKey){
+  if(event.altKey && !altKeyWasPressed){
     altKeyWasPressed = true;
     sendToWorker(event);
   }
@@ -160,6 +167,8 @@ function onInputMove(event){
 function sendToWorker(event){
   if(paused)
     return;
+
+  console.log(Date.now(), "sendToWorker");
 
   port.postMessage({ 
     type: event.altKey ? 'area' : 'position', 
