@@ -10,7 +10,7 @@ Download from the [Product Website](http://felixniklas.com/dimensions/) or the [
 Change Log
 ==========
 
-## Version 2 (2015-07-9)
+## Version 2 (2015-07-14)
 
 **Implemented enhancements:**
 
@@ -18,7 +18,6 @@ Change Log
 - adjust dimensions color depending on the background [\#20](https://github.com/mrflix/dimensions/issues/20)
 - climb up gradients [\#3](https://github.com/mrflix/dimensions/issues/3)
 - hide cursor [\#16](https://github.com/mrflix/dimensions/issues/16)
-
 
 **Fixed bugs:**
 
