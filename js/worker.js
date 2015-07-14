@@ -46,7 +46,7 @@ function measureArea(x0, y0){
   var pixelsInArea = [];
   var boundaries = { vertical: [], horizontal: [] };
   runMeasureAreaProcess = true;
-  var maxArea = 500000;
+  var maxArea = 10000000;
   var i = 0;
 
   while(runMeasureAreaProcess && stack.length){
@@ -58,7 +58,7 @@ function measureArea(x0, y0){
     var y = xy[1];
     var currentLightness = getLightnessAt(map, x, y);
 
-    if(currentLightness && Math.abs(currentLightness - lightness) < threshold){
+    if(currentLightness > -1 && Math.abs(currentLightness - lightness) < threshold){
       setLightnessAt(map, x, y, 999);
       pixelsInArea.push([x,y]);
 
