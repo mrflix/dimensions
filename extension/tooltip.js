@@ -168,8 +168,6 @@ function sendToWorker(event){
   if(paused)
     return;
 
-  console.log(Date.now(), "sendToWorker");
-
   port.postMessage({ 
     type: event.altKey ? 'area' : 'position', 
     data: { x: inputX, y: inputY }
