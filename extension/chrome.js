@@ -13,8 +13,8 @@ function addTab(tab){
   tabs[tab.id].activate(tab);
 }
 
-function removeTab(id){
-  tabs[id].deactivate();
+function removeTab(id, silent){
+  tabs[id].deactivate(silent);
 
   for(var tabId in tabs){
     if(tabId == id)
@@ -31,11 +31,10 @@ chrome.runtime.onConnect.addListener(function(port) {
 
 chrome.runtime.onSuspend.addListener(function() {
   for(var tabId in tabs){
-    tabs[tabId].deactivate();
+    tabs[tabId].deactivate(true);
+    delete tabs[tabId];
   }
 });
-
-
 
 var dimensions = {
   image: new Image(),
@@ -62,8 +61,10 @@ var dimensions = {
     });
   },
 
-  deactivate: function(){
-    this.port.postMessage({ type: 'destroy' });
+  deactivate: function(silent){
+    if(!silent)
+      this.port.postMessage({ type: 'destroy' });
+
     chrome.browserAction.setIcon({  
       tabId: this.tab.id,
       path: {
@@ -73,9 +74,14 @@ var dimensions = {
     });
   },
 
+  onBrowserDisconnect: function(){
+    removeTab(this.tab.id, true);
+  },
+
   initialize: function(port){
     this.port = port;
     port.onMessage.addListener(this.receiveBrowserMessage.bind(this));
+    port.onDisconnect.addListener(this.onBrowserDisconnect.bind(this));
     this.port.postMessage({
       type: 'init',
       debug: debug
