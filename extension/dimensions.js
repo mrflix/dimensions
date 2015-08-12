@@ -164,8 +164,6 @@ function finishMeasureArea(){
 
   area.backgroundColor = getColorAt(area.x, area.y);
 
-  console.log(boundariePixels, x, y, area)
-
   postMessage({
     type: 'distances',
     data: area
