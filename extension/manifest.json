@@ -1,7 +1,7 @@
 {
   "name": "Dimensions",
   "description": "A tool for designers to measure screen dimensions",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "manifest_version": 2,
   "author": "Felix Niklas",
   "icons": { 
