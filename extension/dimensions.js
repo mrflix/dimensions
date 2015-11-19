@@ -325,7 +325,7 @@ function setLightnessAt(data, x, y, value){
 // checks if x and y are in the canvas boundaries
 //
 function inBoundaries(x, y){
-  if(x >= 0 && x <= width && y >= 0 && y <= height)
+  if(x >= 0 && x < width && y >= 0 && y < height)
     return true;
   else
     return false;

@@ -43,6 +43,9 @@ var dimensions = {
   activate: function(tab){
     this.tab = tab;
 
+    this.onBrowserDisconnectClosure = this.onBrowserDisconnect.bind(this);
+    this.receiveBrowserMessageClosure = this.receiveBrowserMessage.bind(this);
+
     chrome.tabs.insertCSS(this.tab.id, { file: 'tooltip.css' });
     chrome.tabs.executeScript(this.tab.id, { file: 'tooltip.js' });
     chrome.browserAction.setIcon({ 
@@ -64,6 +67,9 @@ var dimensions = {
   deactivate: function(silent){
     if(!silent)
       this.port.postMessage({ type: 'destroy' });
+    
+    this.port.onMessage.removeListener(this.receiveBrowserMessageClosure);
+    this.port.onDisconnect.removeListener(this.onBrowserDisconnectClosure);
 
     chrome.browserAction.setIcon({  
       tabId: this.tab.id,
@@ -80,8 +86,8 @@ var dimensions = {
 
   initialize: function(port){
     this.port = port;
-    port.onMessage.addListener(this.receiveBrowserMessage.bind(this));
-    port.onDisconnect.addListener(this.onBrowserDisconnect.bind(this));
+    this.port.onMessage.addListener(this.receiveBrowserMessageClosure);
+    this.port.onDisconnect.addListener(this.onBrowserDisconnectClosure);
     this.port.postMessage({
       type: 'init',
       debug: debug
