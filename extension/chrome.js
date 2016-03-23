@@ -5,7 +5,7 @@ function toggle(tab){
   if(!tabs[tab.id])
     addTab(tab);
   else
-    removeTab(tab.id);
+    deactivateTab(tab.id);
 }
 
 function addTab(tab){
@@ -13,17 +13,29 @@ function addTab(tab){
   tabs[tab.id].activate(tab);
 }
 
-function removeTab(id, silent){
-  tabs[id].deactivate(silent);
+function deactivateTab(id){
+  tabs[id].deactivate();
+}
 
+function removeTab(id){
   for(var tabId in tabs){
     if(tabId == id)
       delete tabs[tabId];
   }
 }
 
-chrome.commands.onCommand.addListener(toggle);
-chrome.browserAction.onClicked.addListener(toggle);
+var lastBrowserAction = null;
+
+chrome.browserAction.onClicked.addListener(function(tab){
+  if(lastBrowserAction && Date.now() - lastBrowserAction < 10){
+    // fix bug in Chrome Version 49.0.2623.87
+    // that triggers browserAction.onClicked twice 
+    // when called from shortcut _execute_browser_action
+    return;
+  }
+  toggle(tab);
+  lastBrowserAction = Date.now();
+});
 
 chrome.runtime.onConnect.addListener(function(port) {
   tabs[ port.sender.tab.id ].initialize(port);
@@ -32,13 +44,13 @@ chrome.runtime.onConnect.addListener(function(port) {
 chrome.runtime.onSuspend.addListener(function() {
   for(var tabId in tabs){
     tabs[tabId].deactivate(true);
-    delete tabs[tabId];
   }
 });
 
 var dimensions = {
   image: new Image(),
   canvas: document.createElement('canvas'),
+  alive: true,
 
   activate: function(tab){
     this.tab = tab;
@@ -65,6 +77,12 @@ var dimensions = {
   },
 
   deactivate: function(silent){
+    if(!this.port){
+      // not yet initialized
+      this.alive = false;
+      return;
+    }
+
     if(!silent)
       this.port.postMessage({ type: 'destroy' });
     
@@ -78,20 +96,29 @@ var dimensions = {
         38: "images/icon@2x.png"
       }
     });
+
+    window.removeTab(this.tab.id);
   },
 
   onBrowserDisconnect: function(){
-    removeTab(this.tab.id, true);
+    this.deactivate(true);
   },
 
   initialize: function(port){
     this.port = port;
+
+    if(!this.alive){
+      // was deactivated whilest still booting up
+      this.deactivate();
+      return;
+    }
+
     this.port.onMessage.addListener(this.receiveBrowserMessageClosure);
     this.port.onDisconnect.addListener(this.onBrowserDisconnectClosure);
     this.port.postMessage({
       type: 'init',
       debug: debug
-    })
+    });
   },
 
   receiveWorkerMessage: function(event){
