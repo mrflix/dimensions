@@ -1,0 +1,108 @@
+.fn-noCursor {
+  cursor: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 999999;
+}
+
+.fn-dimensions {
+  position: fixed;
+  width: 0;
+  height: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.fn-debugScreen {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 999;
+}
+
+.fn-debugScreen.is-hidden {
+  display: none;
+}
+
+.fn-tooltip {
+  position: absolute;
+  left: 5px;
+  bottom: 4px;
+  padding: 0 5px;
+  color: white;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 20px;
+  font-family: sans-serif;
+  border-radius: 3px;
+  background: hsla(205,100%,10%,.55);
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+}
+
+  .altColor .fn-tooltip {
+    background: hsla(50,100%,10%,.55);
+  }
+
+  .fn-tooltip.left {
+    left: auto;
+    right: 5px;
+  }
+
+  .fn-tooltip.bottom {
+    bottom: auto;
+    top: 5px;
+  }
+
+.fn-axis {
+  position: absolute;
+  background: hsla(205,100%,50%,.55);
+}
+
+  .altColor .fn-axis {
+    background: hsla(50,100%,50%,.55);
+  }
+
+  .fn-axis:before,
+  .fn-axis:after {
+    content: "";
+    position: absolute;
+    background: inherit;
+  }
+
+  .x.fn-axis:before,
+  .x.fn-axis:after {
+    left: 0;
+    height: 5px;
+    top: -2px;
+    width: 1px;
+  }
+
+  .x.fn-axis:after {
+    left: 100%;
+  }
+
+  .y.fn-axis:before,
+  .y.fn-axis:after {
+    left: -2px;
+    height: 1px;
+    top: 0;
+    width: 5px;
+  }
+
+  .y.fn-axis:after {
+    top: 100%;
+  }
+
+  .x.fn-axis {
+    height: 1px;
+  }
+
+  .y.fn-axis {
+    width: 1px;
+  }
