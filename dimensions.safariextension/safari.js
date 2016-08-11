@@ -1,51 +1,58 @@
 var debug = false;
-var tabs = {};
+var tabs = [];
 
 function toggle(tab){
-  if(!tabs[tab.id])
+  if(tabs.indexOf(tab) == -1)
     addTab(tab);
   else
-    deactivateTab(tab.id);
+    deactivateTab(tab);
+}
+
+function validateTab(tab){
+  
 }
 
 function addTab(tab){
-  tabs[tab.id] = Object.create(dimensions);
-  tabs[tab.id].activate(tab);
+  var dimensions = Object.create(dimensions);
+  dimensions.activate(tab);
+  tabs.push(dimensions);
 }
 
-function deactivateTab(id){
-  tabs[id].deactivate();
-}
-
-function removeTab(id){
-  for(var tabId in tabs){
-    if(tabId == id)
-      delete tabs[tabId];
+function deactivateTab(tab){
+  for(var i=0; i<tabs.length; i++){
+    if(tabs[i] === tab){
+      tab.deactivate();
+      return;
+    }
   }
 }
 
-var lastBrowserAction = null;
+function removeTab(tab){
+  var pos = tabs.indexOf(tab);
+  tabs.splice(pos,1);
+}
 
-chrome.browserAction.onClicked.addListener(function(tab){
-  if(lastBrowserAction && Date.now() - lastBrowserAction < 10){
-    // fix bug in Chrome Version 49.0.2623.87
-    // that triggers browserAction.onClicked twice 
-    // when called from shortcut _execute_browser_action
-    return;
-  }
-  toggle(tab);
-  lastBrowserAction = Date.now();
-});
+safari.application.addEventListener('command', function(event){
+  toggle(event.target.browserWindow.activeTab);
+}, false);
+safari.application.addEventListener('validate', function(event){
+  validateTab(event.target.browserWindow.activeTab);
+}, false);
 
-chrome.runtime.onConnect.addListener(function(port) {
-  tabs[ port.sender.tab.id ].initialize(port);
-});
+// chrome.browserAction.onClicked.addListener(function(tab){
+//   toggle(tab);
+//   lastBrowserAction = Date.now();
+// });
 
-chrome.runtime.onSuspend.addListener(function() {
-  for(var tabId in tabs){
-    tabs[tabId].deactivate(true);
-  }
-});
+// chrome.runtime.onConnect.addListener(function(port) {
+//   tabs[ port.sender.tab.id ].initialize(port);
+// });
+
+// chrome.runtime.onSuspend.addListener(function() {
+//   for(var tabId in tabs){
+//     tabs[tabId].deactivate(true);
+//   }
+// });
 
 var dimensions = {
   image: new Image(),
@@ -58,15 +65,13 @@ var dimensions = {
     this.onBrowserDisconnectClosure = this.onBrowserDisconnect.bind(this);
     this.receiveBrowserMessageClosure = this.receiveBrowserMessage.bind(this);
 
-    chrome.tabs.insertCSS(this.tab.id, { file: 'tooltip.css' });
-    chrome.tabs.executeScript(this.tab.id, { file: 'tooltip.chrome.js' });
-    chrome.browserAction.setIcon({ 
-      tabId: this.tab.id,
-      path: {
-        19: "images/icon_active.png",
-        38: "images/icon_active@2x.png"
-      }
-    });
+    // chrome.browserAction.setIcon({ 
+    //   tabId: this.tab.id,
+    //   path: {
+    //     19: "images/icon_active.png",
+    //     38: "images/icon_active@2x.png"
+    //   }
+    // });
 
     this.worker = new Worker("dimensions.js");
     this.worker.onmessage = this.receiveWorkerMessage.bind(this);
@@ -77,25 +82,19 @@ var dimensions = {
   },
 
   deactivate: function(silent){
-    if(!this.port){
-      // not yet initialized
-      this.alive = false;
-      return;
-    }
-
-    if(!silent)
-      this.port.postMessage({ type: 'destroy' });
+    // if(!silent)
+    //   this.port.postMessage({ type: 'destroy' });
     
-    this.port.onMessage.removeListener(this.receiveBrowserMessageClosure);
-    this.port.onDisconnect.removeListener(this.onBrowserDisconnectClosure);
+    // this.port.onMessage.removeListener(this.receiveBrowserMessageClosure);
+    // this.port.onDisconnect.removeListener(this.onBrowserDisconnectClosure);
 
-    chrome.browserAction.setIcon({  
-      tabId: this.tab.id,
-      path: {
-        19: "images/icon.png",
-        38: "images/icon@2x.png"
-      }
-    });
+    // chrome.browserAction.setIcon({  
+    //   tabId: this.tab.id,
+    //   path: {
+    //     19: "images/icon.png",
+    //     38: "images/icon@2x.png"
+    //   }
+    // });
 
     window.removeTab(this.tab.id);
   },
@@ -104,28 +103,20 @@ var dimensions = {
     this.deactivate(true);
   },
 
-  initialize: function(port){
-    this.port = port;
-
-    if(!this.alive){
-      // was deactivated whilest still booting up
-      this.deactivate();
-      return;
-    }
-
-    this.port.onMessage.addListener(this.receiveBrowserMessageClosure);
-    this.port.onDisconnect.addListener(this.onBrowserDisconnectClosure);
-    this.port.postMessage({
-      type: 'init',
-      debug: debug
-    });
+  initialize: function(){
+    // this.port.onMessage.addListener(this.receiveBrowserMessageClosure);
+    // this.port.onDisconnect.addListener(this.onBrowserDisconnectClosure);
+    // this.port.postMessage({
+    //   type: 'init',
+    //   debug: debug
+    // });
   },
 
   receiveWorkerMessage: function(event){
     var forward = ['debug screen', 'distances', 'screenshot processed'];
 
     if(forward.indexOf(event.data.type) > -1){
-      this.port.postMessage(event.data)
+      // this.port.postMessage(event.data)
     }
   },
 
@@ -144,7 +135,7 @@ var dimensions = {
   },
 
   takeScreenshot: function(){
-    chrome.tabs.captureVisibleTab({ format: "png" }, this.parseScreenshot.bind(this));
+    // chrome.tabs.captureVisibleTab({ format: "png" }, this.parseScreenshot.bind(this));
   },
 
   parseScreenshot: function(dataUrl){

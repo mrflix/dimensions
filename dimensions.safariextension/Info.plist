@@ -18,11 +18,11 @@
 	<string>1</string>
 	<key>Chrome</key>
 	<dict>
+		<key>Global Page</key>
+		<string>global.safari.html</string>
 		<key>Toolbar Items</key>
 		<array>
 			<dict>
-				<key>Command</key>
-				<string>measure</string>
 				<key>Identifier</key>
 				<string>dimensions</string>
 				<key>Image</key>
@@ -36,8 +36,24 @@
 			</dict>
 		</array>
 	</dict>
+	<key>Content</key>
+	<dict>
+		<key>Scripts</key>
+		<dict>
+			<key>End</key>
+			<array>
+				<string>tooltip.safari.js</string>
+			</array>
+		</dict>
+		<key>Stylesheets</key>
+		<array>
+			<string>tooltip.css</string>
+		</array>
+	</dict>
 	<key>Description</key>
 	<string>A tool for designers to measure screen dimensions</string>
+	<key>DeveloperIdentifier</key>
+	<string>0000000000</string>
 	<key>ExtensionInfoDictionaryVersion</key>
 	<string>1.0</string>
 	<key>Permissions</key>

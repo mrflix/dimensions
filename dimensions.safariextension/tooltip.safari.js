@@ -1,5 +1,4 @@
 var body = document.querySelector('body');
-var port = chrome.runtime.connect({ name: "dimensions" });
 var changeDelay = 300;
 var changeTimeout;
 var paused = true;
@@ -13,6 +12,10 @@ overlay.className = 'fn-noCursor';
 var debug;
 
 function init(){
+  // prevent running inside of frames
+  if(window.top === window)
+    return false;
+
   window.addEventListener('mousemove', onInputMove);
   window.addEventListener('touchmove', onInputMove);
   window.addEventListener('scroll', onVisibleAreaChange);
@@ -25,25 +28,26 @@ function init(){
   requestNewScreenshot();
 }
 
-port.onMessage.addListener(function(event){
+safari.self.addEventListener('message', function(event){
   if(connectionClosed)
     return;
 
-  switch(event.type){
+  switch(event.name){
     case 'init':
-      debug = event.debug;
+      init();
+      debug = event.message.debug;
 
       if(debug)
         createDebugScreen();
       break;
     case 'distances':
-      showDimensions(event.data);
+      showDimensions(event.message.data);
       break;
     case 'screenshot processed':
       resume();
       break;
     case 'debug screen':
-      renderDebugScreenshot(event.map)
+      renderDebugScreenshot(event.message.map);
       break;
     case 'destroy':
       destroy();
@@ -129,7 +133,7 @@ function onVisibleAreaChange(){
 }
 
 function requestNewScreenshot(){
-  port.postMessage({ type: 'take screenshot' });
+  safari.self.tab.dispatchMessage('take screenshot');
 }
 
 function pause(){
@@ -189,10 +193,8 @@ function sendToWorker(event){
   if(paused)
     return;
 
-  port.postMessage({ 
-    type: event.altKey ? 'area' : 'position', 
-    data: { x: inputX, y: inputY }
-  });
+  var name = event.altKey ? 'area' : 'position';
+  safari.self.tab.dispatchMessage(name, { x: inputX, y: inputY });
 }
 
 //
@@ -299,5 +301,3 @@ function rgbToHsl(r, g, b){
 
   return [h, s, l];
 }
-
-init();
