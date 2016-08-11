@@ -63,8 +63,10 @@ var dimensions = {
     chrome.browserAction.setIcon({ 
       tabId: this.tab.id,
       path: {
-        19: "images/icon_active.png",
-        38: "images/icon_active@2x.png"
+        16: "images/icon16_active.png",
+        19: "images/icon19_active.png",
+        32: "images/icon16_active@2x.png",
+        38: "images/icon19_active@2x.png"
       }
     });
 
@@ -92,8 +94,10 @@ var dimensions = {
     chrome.browserAction.setIcon({  
       tabId: this.tab.id,
       path: {
-        19: "images/icon.png",
-        38: "images/icon@2x.png"
+        16: "images/icon16.png",
+        19: "images/icon19.png",
+        32: "images/icon16@2x.png",
+        38: "images/icon19@2x.png"
       }
     });
 
