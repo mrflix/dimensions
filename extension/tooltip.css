@@ -38,6 +38,7 @@
   font-size: 12px;
   line-height: 20px;
   font-family: sans-serif;
+  direction: ltr;
   border-radius: 3px;
   background: hsla(205,100%,10%,.55);
   -webkit-box-sizing: border-box;

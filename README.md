@@ -10,6 +10,10 @@ Download from the [Product Website](http://felixniklas.com/dimensions/) or the [
 Change Log
 ==========
 
+## Version 2.0.5 (2016-10-23)
+
+- make sure that the text direction stays left-to-right [\#30](https://github.com/mrflix/dimensions/issues/30)
+
 ## Version 2 (2015-07-14)
 
 **Implemented enhancements:**
