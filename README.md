@@ -7,6 +7,8 @@ Download from the [Product Website](http://felixniklas.com/dimensions/) or the [
 
 ![Dimensions screenshot](/_sources/screenshot.png?raw=true)
 
+⚡️ Looking for a more advanced tool that works **outside the browser**? Check out [PixelSnap for Mac](https://getpixelsnap.com/?ref=dimensions)
+
 Change Log
 ==========
 
