@@ -20,6 +20,7 @@ function init(){
 
   window.addEventListener('keydown', detectAltKeyPress);
   window.addEventListener('keyup', detectAltKeyRelease);
+  window.addEventListener('mousedown', detectMouseDown);
 
   disableCursor();
   requestNewScreenshot();
@@ -104,16 +105,26 @@ function destroy(){
   window.removeEventListener('mousemove', onInputMove);
   window.removeEventListener('touchmove', onInputMove);
   window.removeEventListener('scroll', onVisibleAreaChange);
+  window.removeEventListener('mousedown', detectMouseDown);
 
   removeDebugScreen();
-  removeDimensions();
+  removeDimensions(true);
   enableCursor();
 }
 
-function removeDimensions(){
+function removeDimensions(destroyFrozen){
   var dimensions = body.querySelector('.fn-dimensions');
   if(dimensions)
     body.removeChild(dimensions);
+
+  if (destroyFrozen) {
+      var dimensionsFrozen = body.querySelectorAll('.fn-dimensions-frozen');
+      if (dimensionsFrozen) {
+          dimensionsFrozen.forEach(function (elem) {
+              body.removeChild(elem);
+          });
+      }
+  }
 }
 
 function onVisibleAreaChange(){
@@ -298,6 +309,14 @@ function rgbToHsl(r, g, b){
   }
 
   return [h, s, l];
+}
+
+function detectMouseDown(event) {
+    var dimensions = body.querySelector('.fn-dimensions');
+    if (dimensions) {
+        dimensions.classList.remove('fn-dimensions');
+        dimensions.classList.add('fn-dimensions-frozen');
+    }
 }
 
 init();
