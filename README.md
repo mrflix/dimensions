@@ -3,9 +3,11 @@ Dimensions
 
 A browser extension for coders to measure screen dimensions.
 Currently only available for Chrome.
-Download from the [Product Website](http://felixniklas.com/dimensions/) or the [Chrome Webstore](https://chrome.google.com/webstore/detail/dimensions/baocaagndhipibgklemoalmkljaimfdj).
+Download from the [Product Website](http://felixniklas.com/dimensions/), the [Chrome Webstore](https://chrome.google.com/webstore/detail/dimensions/baocaagndhipibgklemoalmkljaimfdj) or [Firefox Addons](https://addons.mozilla.org/en-US/firefox/addon/dimensions_extension/).
 
 ![Dimensions screenshot](/_sources/screenshot.png?raw=true)
+
+⚡️ Looking for a more advanced tool that works **outside the browser**? Check out [PixelSnap for Mac](https://getpixelsnap.com/?ref=dimensions)
 
 Change Log
 ==========

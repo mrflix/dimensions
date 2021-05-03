@@ -20,6 +20,7 @@ function init(){
 
   window.addEventListener('keydown', detectAltKeyPress);
   window.addEventListener('keyup', detectAltKeyRelease);
+  window.addEventListener('keyup', onKeyRelease);
 
   disableCursor();
   requestNewScreenshot();
@@ -163,6 +164,14 @@ function detectAltKeyRelease(event){
     altKeyWasPressed = false;
     sendToWorker(event);
     hideDebugScreen();
+  }
+}
+
+function onKeyRelease(event) {
+  switch (event.code) {
+    case 'Escape':
+      port.postMessage({ type: 'close_overlay' });
+    break;
   }
 }
 
