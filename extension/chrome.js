@@ -143,6 +143,9 @@ var dimensions = {
         case 'take screenshot':
           this.takeScreenshot();
           break;
+        case 'close_overlay':
+          this.deactivate();
+          break;
       }
     }
   },
