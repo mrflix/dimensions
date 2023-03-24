@@ -7,12 +7,12 @@ var inputX, inputY;
 var altKeyWasPressed = false;
 var connectionClosed = false;
 var lineColor = getLineColor();
-var colorThreshold = [0.2,0.5,0.2];
+var colorThreshold = [0.2, 0.5, 0.2];
 var overlay = document.createElement('div');
 overlay.className = 'fn-noCursor';
 var debug;
 
-function init(){
+function init() {
   window.addEventListener('mousemove', onInputMove);
   window.addEventListener('touchmove', onInputMove);
   window.addEventListener('scroll', onVisibleAreaChange);
@@ -26,15 +26,15 @@ function init(){
   requestNewScreenshot();
 }
 
-port.onMessage.addListener(function(event){
-  if(connectionClosed)
+port.onMessage.addListener(function (event) {
+  if (connectionClosed)
     return;
 
-  switch(event.type){
+  switch (event.type) {
     case 'init':
       debug = event.debug;
 
-      if(debug)
+      if (debug)
         createDebugScreen();
       break;
     case 'distances':
@@ -52,7 +52,7 @@ port.onMessage.addListener(function(event){
   }
 });
 
-function onResizeWindow(){
+function onResizeWindow() {
   overlay.width = window.innerWidth;
   overlay.height = window.innerHeight;
   onVisibleAreaChange();
@@ -60,22 +60,22 @@ function onResizeWindow(){
 
 onResizeWindow();
 
-function createDebugScreen(){
+function createDebugScreen() {
   debugScreen = document.createElement('canvas');
-  dsx = debugScreen.getContext('2d');
+  dsx = debugScreen.getContext('2d', { willReadFrequently: true });
   debugScreen.className = 'fn-debugScreen';
   body.appendChild(debugScreen);
 }
 
-function removeDebugScreen(){
-  if(!debug || !debugScreen)
+function removeDebugScreen() {
+  if (!debug || !debugScreen)
     return;
 
   body.removeChild(debugScreen);
 }
 
-function hideDebugScreen(){
-  if(!debug || !debugScreen)
+function hideDebugScreen() {
+  if (!debug || !debugScreen)
     return;
 
   debugScreen.classList.add('is-hidden');
@@ -88,19 +88,19 @@ function renderDebugScreenshot(map) {
 
   var visualization = dsx.createImageData(window.innerWidth, window.innerHeight);
 
-  for(var i=0, n=0, l=visualization.data.length; i<l; i++, n+= 4){
-    if(map && map[i] === 256) {
+  for (var i = 0, n = 0, l = visualization.data.length; i < l; i++, n += 4) {
+    if (map && map[i] === 256) {
       visualization.data[n] = 255; // r
-      visualization.data[n+1] = 0; // g
-      visualization.data[n+2] = 0; // b
-      visualization.data[n+3] = 128; // a
+      visualization.data[n + 1] = 0; // g
+      visualization.data[n + 2] = 0; // b
+      visualization.data[n + 3] = 128; // a
     }
   }
 
   dsx.putImageData(visualization, 0, 0);
 }
 
-function destroy(){
+function destroy() {
   connectionClosed = true;
   window.removeEventListener('mousemove', onInputMove);
   window.removeEventListener('touchmove', onInputMove);
@@ -111,56 +111,56 @@ function destroy(){
   enableCursor();
 }
 
-function removeDimensions(){
+function removeDimensions() {
   var dimensions = body.querySelector('.fn-dimensions');
-  if(dimensions)
+  if (dimensions)
     body.removeChild(dimensions);
 }
 
-function onVisibleAreaChange(){
-  if(!paused)
+function onVisibleAreaChange() {
+  if (!paused)
     pause();
   else
     return;
 
-  if(changeTimeout)
+  if (changeTimeout)
     clearTimeout(changeTimeout);
 
   changeTimeout = setTimeout(requestNewScreenshot, changeDelay);
 }
 
-function requestNewScreenshot(){
+function requestNewScreenshot() {
   port.postMessage({ type: 'take screenshot' });
 }
 
-function pause(){
+function pause() {
   paused = true;
   removeDimensions();
   enableCursor();
 }
 
-function resume(){
+function resume() {
   paused = false;
   disableCursor();
 }
 
-function disableCursor(){
+function disableCursor() {
   body.appendChild(overlay);
 }
 
-function enableCursor(){
+function enableCursor() {
   body.removeChild(overlay);
 }
 
-function detectAltKeyPress(event){
-  if(event.altKey && !altKeyWasPressed){
+function detectAltKeyPress(event) {
+  if (event.altKey && !altKeyWasPressed) {
     altKeyWasPressed = true;
     sendToWorker(event);
   }
 }
 
-function detectAltKeyRelease(event){
-  if(altKeyWasPressed){
+function detectAltKeyRelease(event) {
+  if (altKeyWasPressed) {
     altKeyWasPressed = false;
     sendToWorker(event);
     hideDebugScreen();
@@ -171,7 +171,7 @@ function onKeyRelease(event) {
   switch (event.code) {
     case 'Escape':
       port.postMessage({ type: 'close_overlay' });
-    break;
+      break;
   }
 }
 
@@ -182,8 +182,8 @@ function onKeyRelease(event) {
 // detects the current pointer position and requests the dimensions at that position
 //
 
-function onInputMove(event){
-  if(event.touches){
+function onInputMove(event) {
+  if (event.touches) {
     inputX = event.touches[0].clientX;
     inputY = event.touches[0].clientY;
   } else {
@@ -194,12 +194,12 @@ function onInputMove(event){
   sendToWorker(event);
 }
 
-function sendToWorker(event){
-  if(paused)
+function sendToWorker(event) {
+  if (paused)
     return;
 
-  port.postMessage({ 
-    type: event.altKey ? 'area' : 'position', 
+  port.postMessage({
+    type: event.altKey ? 'area' : 'position',
     data: { x: inputX, y: inputY }
   });
 }
@@ -211,13 +211,13 @@ function sendToWorker(event){
 // renders the visualisation of the measured dimensions
 //
 
-function showDimensions(dimensions){
-  if(paused)
+function showDimensions(dimensions) {
+  if (paused)
     return;
 
   removeDimensions();
 
-  if(!dimensions)
+  if (!dimensions)
     return;
 
   var newDimensions = document.createElement('div');
@@ -225,9 +225,9 @@ function showDimensions(dimensions){
   newDimensions.style.left = dimensions.x + "px";
   newDimensions.style.top = dimensions.y + "px";
 
-  if(Math.abs(dimensions.backgroundColor[0] - lineColor[0]) <= colorThreshold[0] &&
-      Math.abs(dimensions.backgroundColor[1] - lineColor[1]) <= colorThreshold[1] &&
-      Math.abs(dimensions.backgroundColor[2] - lineColor[2]) <= colorThreshold[2])
+  if (Math.abs(dimensions.backgroundColor[0] - lineColor[0]) <= colorThreshold[0] &&
+    Math.abs(dimensions.backgroundColor[1] - lineColor[1]) <= colorThreshold[1] &&
+    Math.abs(dimensions.backgroundColor[2] - lineColor[2]) <= colorThreshold[2])
     newDimensions.className += ' altColor';
 
   var measureWidth = dimensions.left + dimensions.right;
@@ -247,12 +247,12 @@ function showDimensions(dimensions){
   tooltip.className = 'fn-tooltip';
 
   // add +1 on both axis because of the pixel below the mouse pointer
-  tooltip.textContent = (measureWidth+1) +" x "+ (measureHeight+1) + " px";
+  tooltip.textContent = (measureWidth + 1) + " x " + (measureHeight + 1) + " px";
 
-  if(dimensions.y < 26)
+  if (dimensions.y < 26)
     tooltip.classList.add('bottom');
 
-  if(dimensions.x > window.innerWidth - 110)
+  if (dimensions.x > window.innerWidth - 110)
     tooltip.classList.add('left');
 
   newDimensions.appendChild(xAxis);
@@ -288,17 +288,17 @@ function getLineColor() {
  * @param   Number  b       The blue color value
  * @return  Array           The HSL representation
  */
-function rgbToHsl(r, g, b){
+function rgbToHsl(r, g, b) {
   r /= 255, g /= 255, b /= 255;
   var max = Math.max(r, g, b), min = Math.min(r, g, b);
   var h, s, l = (max + min) / 2;
 
-  if(max == min){
+  if (max == min) {
     h = s = 0; // achromatic
-  }else{
+  } else {
     var d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch(max){
+    switch (max) {
       case r: h = (g - b) / d + (g < b ? 6 : 0); break;
       case g: h = (b - r) / d + 2; break;
       case b: h = (r - g) / d + 4; break;

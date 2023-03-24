@@ -1,33 +1,33 @@
 var debug = false;
 var tabs = {};
 
-function toggle(tab){
-  if(!tabs[tab.id])
+function toggle(tab) {
+  if (!tabs[tab.id])
     addTab(tab);
   else
     deactivateTab(tab.id);
 }
 
-function addTab(tab){
+function addTab(tab) {
   tabs[tab.id] = Object.create(dimensions);
   tabs[tab.id].activate(tab);
 }
 
-function deactivateTab(id){
+function deactivateTab(id) {
   tabs[id].deactivate();
 }
 
-function removeTab(id){
-  for(var tabId in tabs){
-    if(tabId == id)
+function removeTab(id) {
+  for (var tabId in tabs) {
+    if (tabId == id)
       delete tabs[tabId];
   }
 }
 
 var lastBrowserAction = null;
 
-chrome.browserAction.onClicked.addListener(function(tab){
-  if(lastBrowserAction && Date.now() - lastBrowserAction < 10){
+chrome.browserAction.onClicked.addListener(function (tab) {
+  if (lastBrowserAction && Date.now() - lastBrowserAction < 10) {
     // fix bug in Chrome Version 49.0.2623.87
     // that triggers browserAction.onClicked twice 
     // when called from shortcut _execute_browser_action
@@ -37,12 +37,12 @@ chrome.browserAction.onClicked.addListener(function(tab){
   lastBrowserAction = Date.now();
 });
 
-chrome.runtime.onConnect.addListener(function(port) {
-  tabs[ port.sender.tab.id ].initialize(port);
+chrome.runtime.onConnect.addListener(function (port) {
+  tabs[port.sender.tab.id].initialize(port);
 });
 
-chrome.runtime.onSuspend.addListener(function() {
-  for(var tabId in tabs){
+chrome.runtime.onSuspend.addListener(function () {
+  for (var tabId in tabs) {
     tabs[tabId].deactivate(true);
   }
 });
@@ -52,7 +52,7 @@ var dimensions = {
   canvas: document.createElement('canvas'),
   alive: true,
 
-  activate: function(tab){
+  activate: function (tab) {
     this.tab = tab;
 
     this.onBrowserDisconnectClosure = this.onBrowserDisconnect.bind(this);
@@ -60,7 +60,7 @@ var dimensions = {
 
     chrome.tabs.insertCSS(this.tab.id, { file: 'tooltip.css' });
     chrome.tabs.executeScript(this.tab.id, { file: 'tooltip.chrome.js' });
-    chrome.browserAction.setIcon({ 
+    chrome.browserAction.setIcon({
       tabId: this.tab.id,
       path: {
         16: "images/icon16_active.png",
@@ -72,26 +72,26 @@ var dimensions = {
 
     this.worker = new Worker("dimensions.js");
     this.worker.onmessage = this.receiveWorkerMessage.bind(this);
-    this.worker.postMessage({ 
+    this.worker.postMessage({
       type: 'init',
-      debug: debug 
+      debug: debug
     });
   },
 
-  deactivate: function(silent){
-    if(!this.port){
+  deactivate: function (silent) {
+    if (!this.port) {
       // not yet initialized
       this.alive = false;
       return;
     }
 
-    if(!silent)
+    if (!silent)
       this.port.postMessage({ type: 'destroy' });
-    
+
     this.port.onMessage.removeListener(this.receiveBrowserMessageClosure);
     this.port.onDisconnect.removeListener(this.onBrowserDisconnectClosure);
 
-    chrome.browserAction.setIcon({  
+    chrome.browserAction.setIcon({
       tabId: this.tab.id,
       path: {
         16: "images/icon16.png",
@@ -104,14 +104,14 @@ var dimensions = {
     window.removeTab(this.tab.id);
   },
 
-  onBrowserDisconnect: function(){
+  onBrowserDisconnect: function () {
     this.deactivate(true);
   },
 
-  initialize: function(port){
+  initialize: function (port) {
     this.port = port;
 
-    if(!this.alive){
+    if (!this.alive) {
       // was deactivated whilest still booting up
       this.deactivate();
       return;
@@ -125,21 +125,21 @@ var dimensions = {
     });
   },
 
-  receiveWorkerMessage: function(event){
+  receiveWorkerMessage: function (event) {
     var forward = ['debug screen', 'distances', 'screenshot processed'];
 
-    if(forward.indexOf(event.data.type) > -1){
+    if (forward.indexOf(event.data.type) > -1) {
       this.port.postMessage(event.data)
     }
   },
 
-  receiveBrowserMessage: function(event){
+  receiveBrowserMessage: function (event) {
     var forward = ['position', 'area'];
 
-    if(forward.indexOf(event.type) > -1){
+    if (forward.indexOf(event.type) > -1) {
       this.worker.postMessage(event)
     } else {
-      switch(event.type){
+      switch (event.type) {
         case 'take screenshot':
           this.takeScreenshot();
           break;
@@ -150,11 +150,11 @@ var dimensions = {
     }
   },
 
-  takeScreenshot: function(){
+  takeScreenshot: function () {
     chrome.tabs.captureVisibleTab({ format: "png" }, this.parseScreenshot.bind(this));
   },
 
-  parseScreenshot: function(dataUrl){
+  parseScreenshot: function (dataUrl) {
     this.image.onload = this.loadImage.bind(this);
     this.image.src = dataUrl;
   },
@@ -166,22 +166,22 @@ var dimensions = {
   // responsible to load a image and extract the image data
   //
 
-  loadImage: function(){
-    this.ctx = this.canvas.getContext('2d');
+  loadImage: function () {
+    this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
 
     // adjust the canvas size to the image size
     this.canvas.width = this.tab.width;
     this.canvas.height = this.tab.height;
-    
+
     // draw the image to the canvas
     this.ctx.drawImage(this.image, 0, 0, this.canvas.width, this.canvas.height);
-    
+
     // read out the image data from the canvas
     var imgData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height).data;
 
-    this.worker.postMessage({ 
+    this.worker.postMessage({
       type: 'imgData',
-      imgData: imgData.buffer,  
+      imgData: imgData.buffer,
       width: this.canvas.width,
       height: this.canvas.height
     }, [imgData.buffer]);

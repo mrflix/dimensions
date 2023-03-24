@@ -4,14 +4,16 @@
   "version": "2.0.5",
   "manifest_version": 2,
   "author": "Felix Niklas",
-  "icons": { 
-    "16":  "images/icon16.png",
-    "32":  "images/icon16@2x.png",
-    "48":  "images/icon48.png",
-    "128": "images/icon128.png" 
+  "icons": {
+    "16": "images/icon16.png",
+    "32": "images/icon16@2x.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
   },
   "background": {
-    "scripts": ["chrome.js"],
+    "scripts": [
+      "chrome.js"
+    ],
     "persistent": false
   },
   "commands": {

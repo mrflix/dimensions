@@ -40,70 +40,70 @@
   font-family: sans-serif;
   direction: ltr;
   border-radius: 3px;
-  background: hsla(205,100%,10%,.55);
+  background: hsla(205, 100%, 10%, .55);
   -webkit-box-sizing: border-box;
-     -moz-box-sizing: border-box;
-          box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
 }
 
-  .altColor .fn-tooltip {
-    background: hsla(50,100%,10%,.55);
-  }
+.altColor .fn-tooltip {
+  background: hsla(50, 100%, 10%, .55);
+}
 
-  .fn-tooltip.left {
-    left: auto;
-    right: 5px;
-  }
+.fn-tooltip.left {
+  left: auto;
+  right: 5px;
+}
 
-  .fn-tooltip.bottom {
-    bottom: auto;
-    top: 5px;
-  }
+.fn-tooltip.bottom {
+  bottom: auto;
+  top: 5px;
+}
 
 .fn-axis {
   position: absolute;
-  background: hsla(205,100%,50%,.55);
+  background: hsla(205, 100%, 50%, .55);
 }
 
-  .altColor .fn-axis {
-    background: hsla(50,100%,50%,.55);
-  }
+.altColor .fn-axis {
+  background: hsla(50, 100%, 50%, .55);
+}
 
-  .fn-axis:before,
-  .fn-axis:after {
-    content: "";
-    position: absolute;
-    background: inherit;
-  }
+.fn-axis:before,
+.fn-axis:after {
+  content: "";
+  position: absolute;
+  background: inherit;
+}
 
-  .x.fn-axis:before,
-  .x.fn-axis:after {
-    left: 0;
-    height: 5px;
-    top: -2px;
-    width: 1px;
-  }
+.x.fn-axis:before,
+.x.fn-axis:after {
+  left: 0;
+  height: 5px;
+  top: -2px;
+  width: 1px;
+}
 
-  .x.fn-axis:after {
-    left: 100%;
-  }
+.x.fn-axis:after {
+  left: 100%;
+}
 
-  .y.fn-axis:before,
-  .y.fn-axis:after {
-    left: -2px;
-    height: 1px;
-    top: 0;
-    width: 5px;
-  }
+.y.fn-axis:before,
+.y.fn-axis:after {
+  left: -2px;
+  height: 1px;
+  top: 0;
+  width: 5px;
+}
 
-  .y.fn-axis:after {
-    top: 100%;
-  }
+.y.fn-axis:after {
+  top: 100%;
+}
 
-  .x.fn-axis {
-    height: 1px;
-  }
+.x.fn-axis {
+  height: 1px;
+}
 
-  .y.fn-axis {
-    width: 1px;
-  }
+.y.fn-axis {
+  width: 1px;
+}

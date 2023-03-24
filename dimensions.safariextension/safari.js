@@ -1,41 +1,41 @@
 var debug = false;
 var tabs = [];
 
-function toggle(tab){
-  if(tabs.indexOf(tab) == -1)
+function toggle(tab) {
+  if (tabs.indexOf(tab) == -1)
     addTab(tab);
   else
     deactivateTab(tab);
 }
 
-function validateTab(tab){
-  
+function validateTab(tab) {
+
 }
 
-function addTab(tab){
+function addTab(tab) {
   var dimensions = Object.create(dimensions);
   dimensions.activate(tab);
   tabs.push(dimensions);
 }
 
-function deactivateTab(tab){
-  for(var i=0; i<tabs.length; i++){
-    if(tabs[i] === tab){
+function deactivateTab(tab) {
+  for (var i = 0; i < tabs.length; i++) {
+    if (tabs[i] === tab) {
       tab.deactivate();
       return;
     }
   }
 }
 
-function removeTab(tab){
+function removeTab(tab) {
   var pos = tabs.indexOf(tab);
-  tabs.splice(pos,1);
+  tabs.splice(pos, 1);
 }
 
-safari.application.addEventListener('command', function(event){
+safari.application.addEventListener('command', function (event) {
   toggle(event.target.browserWindow.activeTab);
 }, false);
-safari.application.addEventListener('validate', function(event){
+safari.application.addEventListener('validate', function (event) {
   validateTab(event.target.browserWindow.activeTab);
 }, false);
 
@@ -59,7 +59,7 @@ var dimensions = {
   canvas: document.createElement('canvas'),
   alive: true,
 
-  activate: function(tab){
+  activate: function (tab) {
     this.tab = tab;
 
     this.onBrowserDisconnectClosure = this.onBrowserDisconnect.bind(this);
@@ -75,16 +75,16 @@ var dimensions = {
 
     this.worker = new Worker("dimensions.js");
     this.worker.onmessage = this.receiveWorkerMessage.bind(this);
-    this.worker.postMessage({ 
+    this.worker.postMessage({
       type: 'init',
-      debug: debug 
+      debug: debug
     });
   },
 
-  deactivate: function(silent){
+  deactivate: function (silent) {
     // if(!silent)
     //   this.port.postMessage({ type: 'destroy' });
-    
+
     // this.port.onMessage.removeListener(this.receiveBrowserMessageClosure);
     // this.port.onDisconnect.removeListener(this.onBrowserDisconnectClosure);
 
@@ -99,11 +99,11 @@ var dimensions = {
     window.removeTab(this.tab.id);
   },
 
-  onBrowserDisconnect: function(){
+  onBrowserDisconnect: function () {
     this.deactivate(true);
   },
 
-  initialize: function(){
+  initialize: function () {
     // this.port.onMessage.addListener(this.receiveBrowserMessageClosure);
     // this.port.onDisconnect.addListener(this.onBrowserDisconnectClosure);
     // this.port.postMessage({
@@ -112,21 +112,21 @@ var dimensions = {
     // });
   },
 
-  receiveWorkerMessage: function(event){
+  receiveWorkerMessage: function (event) {
     var forward = ['debug screen', 'distances', 'screenshot processed'];
 
-    if(forward.indexOf(event.data.type) > -1){
+    if (forward.indexOf(event.data.type) > -1) {
       // this.port.postMessage(event.data)
     }
   },
 
-  receiveBrowserMessage: function(event){
+  receiveBrowserMessage: function (event) {
     var forward = ['position', 'area'];
 
-    if(forward.indexOf(event.type) > -1){
+    if (forward.indexOf(event.type) > -1) {
       this.worker.postMessage(event)
     } else {
-      switch(event.type){
+      switch (event.type) {
         case 'take screenshot':
           this.takeScreenshot();
           break;
@@ -134,11 +134,11 @@ var dimensions = {
     }
   },
 
-  takeScreenshot: function(){
+  takeScreenshot: function () {
     // chrome.tabs.captureVisibleTab({ format: "png" }, this.parseScreenshot.bind(this));
   },
 
-  parseScreenshot: function(dataUrl){
+  parseScreenshot: function (dataUrl) {
     this.image.onload = this.loadImage.bind(this);
     this.image.src = dataUrl;
   },
@@ -150,22 +150,22 @@ var dimensions = {
   // responsible to load a image and extract the image data
   //
 
-  loadImage: function(){
-    this.ctx = this.canvas.getContext('2d');
+  loadImage: function () {
+    this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
 
     // adjust the canvas size to the image size
     this.canvas.width = this.tab.width;
     this.canvas.height = this.tab.height;
-    
+
     // draw the image to the canvas
     this.ctx.drawImage(this.image, 0, 0, this.canvas.width, this.canvas.height);
-    
+
     // read out the image data from the canvas
     var imgData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height).data;
 
-    this.worker.postMessage({ 
+    this.worker.postMessage({
       type: 'imgData',
-      imgData: imgData.buffer,  
+      imgData: imgData.buffer,
       width: this.canvas.width,
       height: this.canvas.height
     }, [imgData.buffer]);
