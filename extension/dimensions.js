@@ -1,5 +1,5 @@
-var areaThreshold = 6;
-var dimensionsThreshold = 6;
+var areaThreshold = 4;
+var dimensionsThreshold = 4;
 var debug;
 var map;
 
