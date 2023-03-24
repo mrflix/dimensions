@@ -1,9 +1,9 @@
 var data, width, height, threshold, runMeasureAreaProcess;
 
-onmessage = function(event){
-  switch(event.data.type){
+onmessage = function (event) {
+  switch (event.data.type) {
     case "imgData":
-      data = grayscale( new Uint8ClampedArray(event.data.imgData) );
+      data = grayscale(new Uint8ClampedArray(event.data.imgData));
       width = event.data.width;
       height = event.data.height;
       threshold = event.data.threshold;
@@ -38,7 +38,7 @@ onmessage = function(event){
 //
 //
 
-function measureArea(x0, y0){
+function measureArea(x0, y0) {
   var map = new Int16Array(data);
   var area = { top: y0, right: x0, bottom: y0, left: x0 };
   var lightness = getLightnessAt(map, x0, y0);
@@ -49,8 +49,8 @@ function measureArea(x0, y0){
   var maxArea = 10000000;
   var i = 0;
 
-  while(runMeasureAreaProcess && stack.length){
-    if(++i > maxArea)
+  while (runMeasureAreaProcess && stack.length) {
+    if (++i > maxArea)
       return false;
 
     var xy = stack.shift();
@@ -58,33 +58,33 @@ function measureArea(x0, y0){
     var y = xy[1];
     var currentLightness = getLightnessAt(map, x, y);
 
-    if(currentLightness > -1 && Math.abs(currentLightness - lightness) < threshold){
+    if (currentLightness > -1 && Math.abs(currentLightness - lightness) < threshold) {
       setLightnessAt(map, x, y, 999);
-      pixelsInArea.push([x,y]);
+      pixelsInArea.push([x, y]);
 
-      if(x < area.left)
+      if (x < area.left)
         area.left = x;
-      else if(x > area.right)
+      else if (x > area.right)
         area.right = x;
-      if(y < area.top)
+      if (y < area.top)
         area.top = y;
-      else if(y > area.bottom)
+      else if (y > area.bottom)
         area.bottom = y;
 
-      stack.push([x-1, y  ]);
-      stack.push([x  , y+1]);
-      stack.push([x+1, y  ]);
-      stack.push([x  , y-1]);
+      stack.push([x - 1, y]);
+      stack.push([x, y + 1]);
+      stack.push([x + 1, y]);
+      stack.push([x, y - 1]);
     }
   }
 
-  for(var i=0, l=pixelsInArea.length; i<l; i++){
+  for (var i = 0, l = pixelsInArea.length; i < l; i++) {
     var x = pixelsInArea[i][0];
     var y = pixelsInArea[i][1];
 
-    if(x === area.left || x === area.right)
+    if (x === area.left || x === area.right)
       boundaries.vertical.push(y);
-    if(y === area.top || y === area.bottom)
+    if (y === area.top || y === area.bottom)
       boundaries.horizontal.push(x);
   }
 
@@ -100,14 +100,14 @@ function measureArea(x0, y0){
 }
 
 
-function getAverage(values){
+function getAverage(values) {
   var i = values.length,
     sum = 0;
   while (i--) {
     sum = sum + values[i];
   }
 
-  return Math.floor(sum/values.length);
+  return Math.floor(sum / values.length);
 }
 
 
@@ -119,8 +119,8 @@ function getAverage(values){
 // around pageX and pageY.
 //
 
-function measureDistances(x, y){
-  if(!inBoundaries(x, y))
+function measureDistances(x, y) {
+  if (!inBoundaries(x, y))
     return false;
 
   var area = 0;
@@ -133,10 +133,10 @@ function measureDistances(x, y){
   }
   var lightness = getLightnessAt(data, x, y);
 
-  if(lightness === 68)
+  if (lightness === 68)
     return false;
 
-  for(var direction in distances){
+  for (var direction in distances) {
     var vector = directions[direction];
     var boundaryFound = false;
     var sx = x;
@@ -144,12 +144,12 @@ function measureDistances(x, y){
     var color;
     var currentLightness;
 
-    while(!boundaryFound){
+    while (!boundaryFound) {
       sx += vector.x;
       sy += vector.y;
       currentLightness = getLightnessAt(data, sx, sy);
 
-      if(currentLightness && Math.abs(currentLightness - lightness) < threshold){
+      if (currentLightness && Math.abs(currentLightness - lightness) < threshold) {
         distances[direction]++;
       } else {
         area += distances[direction];
@@ -158,11 +158,11 @@ function measureDistances(x, y){
     }
   }
 
-  if(area <= 6){
+  if (area <= 6) {
     distances = { top: 0, right: 0, bottom: 0, left: 0 };
     var similarColorStreakThreshold = 10;
 
-    for(var direction in distances){
+    for (var direction in distances) {
       var vector = directions[direction];
       var boundaryFound = false;
       var sx = x;
@@ -171,18 +171,18 @@ function measureDistances(x, y){
       var lastLightness = lightness;
       var similarColorStreak = 0;
 
-      while(!boundaryFound){
+      while (!boundaryFound) {
         sx += vector.x;
         sy += vector.y;
         currentLightness = getLightnessAt(data, sx, sy);
 
-        if(currentLightness){
+        if (currentLightness) {
           distances[direction]++;
 
-          if(Math.abs(currentLightness - lastLightness) < threshold){
+          if (Math.abs(currentLightness - lastLightness) < threshold) {
             similarColorStreak++;
-            if(similarColorStreak === similarColorStreakThreshold){ 
-              distances[direction] -= (similarColorStreakThreshold+1);
+            if (similarColorStreak === similarColorStreakThreshold) {
+              distances[direction] -= (similarColorStreakThreshold + 1);
               boundaryFound = true;
             }
           } else {
@@ -202,11 +202,11 @@ function measureDistances(x, y){
   return distances;
 }
 
-function getLightnessAt(I, x, y){
+function getLightnessAt(I, x, y) {
   return inBoundaries(x, y) ? I[y * width + x] : -1;
 }
 
-function setLightnessAt(I, x, y, value){
+function setLightnessAt(I, x, y, value) {
   return inBoundaries(x, y) ? I[y * width + x] = value : -1;
 }
 
@@ -217,8 +217,8 @@ function setLightnessAt(I, x, y, value){
 // checks if x and y are in the canvas boundaries
 //
 
-function inBoundaries(x, y){
-  if(x > 0 && x < width && y > 0 && y < height)
+function inBoundaries(x, y) {
+  if (x > 0 && x < width && y > 0 && y < height)
     return true;
   else
     return false;
@@ -231,13 +231,13 @@ function inBoundaries(x, y){
 // reduces the input image data to an array of gray shades.
 //
 
-function grayscale(imgData){
-  var gray = new Int16Array(imgData.length/4);
+function grayscale(imgData) {
+  var gray = new Int16Array(imgData.length / 4);
 
-  for(var i=0, n=0, l=imgData.length; i<l; i+=4, n++){
+  for (var i = 0, n = 0, l = imgData.length; i < l; i += 4, n++) {
     var r = imgData[i],
-        g = imgData[i+1],
-        b = imgData[i+2];
+      g = imgData[i + 1],
+      b = imgData[i + 2];
 
     // weighted grayscale algorithm
     gray[n] = Math.round(r * 0.3 + g * 0.59 + b * 0.11);
