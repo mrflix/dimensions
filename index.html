@@ -202,7 +202,7 @@ function showDistances(distances){
 
 function drawCanvas(){
   canvas = document.createElement('canvas');
-  ctx = canvas.getContext('2d');
+  ctx = canvas.getContext('2d', { willReadFrequently: true });
 
   // adjust the canvas size to the image size
   width = canvas.width = holder.clientWidth;

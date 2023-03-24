@@ -167,7 +167,7 @@ var dimensions = {
   //
 
   loadImage: function () {
-    this.ctx = this.canvas.getContext('2d');
+    this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
 
     // adjust the canvas size to the image size
     this.canvas.width = this.tab.width;

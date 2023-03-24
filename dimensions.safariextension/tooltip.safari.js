@@ -65,7 +65,7 @@ onResizeWindow();
 
 function createDebugScreen() {
   debugScreen = document.createElement('canvas');
-  dsx = debugScreen.getContext('2d');
+  dsx = debugScreen.getContext('2d', { willReadFrequently: true });
   debugScreen.className = 'fn-debugScreen';
   body.appendChild(debugScreen);
 }
