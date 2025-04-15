@@ -2,13 +2,17 @@
 <meta charset="utf-8">
 <title>Dimensions Browser Extension</title>
 <link rel="stylesheet" href="css/style.css">
-<link rel="shortcut icon" href="favicon.ico"> 
+<link rel="shortcut icon" href="favicon.ico">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/baocaagndhipibgklemoalmkljaimfdj">
 
 <header>
   <h1><img src="extension/images/icon48.png" srcset="extension/images/icon128.png 2x" width="48" height="48"><span class="h1">Dimensions</span></h1>
-  <h2><span class="h2">Chrome Browser Extension</span></h2>
-  <a href="https://chrome.google.com/webstore/detail/dimensions/baocaagndhipibgklemoalmkljaimfdj" class="button invisible"><img src="img/chrome-icon.png" srcset="img/chrome-icon@2x.png" width="20" height="20"> Install from Chrome Webstore</a>
+  <h2><span class="h2">Browser Extension</span></h2>
+  <div class="buttons">
+    <a href="https://addons.mozilla.org/en-US/firefox/addon/dimensions_extension/" class="button invisible"><img src="img/firefox-logo.svg" width="20" height="20"> Install from Firefox Add-Ons</a>
+    <a href="https://chrome.google.com/webstore/detail/dimensions/baocaagndhipibgklemoalmkljaimfdj" class="button invisible"><img src="img/chrome-logo.svg" width="20" height="20"> Install from Chrome Webstore</a>
+  </div>
 </header>
 
 <div class="main container">
@@ -36,7 +40,7 @@
     <div class="column">
       <img src="img/open-source.svg">
       <h2>Open Source</h2>
-      <p>Dimensions is Open Source and hosted on Github. Want to port it to Firefox? Go ahead and fork it. Pull requests are welcomed!</p>
+      <p>Dimensions is Open Source and hosted on Github. Pull requests are welcomed!</p>
     </div>
   </div>
 </div>
@@ -44,11 +48,12 @@
 <footer>
   <div class="container">
     <div>
-      Made in Berlin in 2014-2016 by Felix Niklas <a href="http://www.twitter.com/mrflix" target="_blank">@mrflix</a>
+      Made in Berlin in 2014-2025 by Felix Niklas <a href="https://mastodon.social/@mrflix">mastodon.social/@mrflix</a>
     </div>
     <ul>
       <li><a href="https://github.com/mrflix/dimensions">Github Project</a>
       <li><a href="https://github.com/mrflix/dimensions/issues">Issues</a>
+      <li><a href="https://addons.mozilla.org/en-US/firefox/addon/dimensions_extension/">Firefox Add-Ons</a>
       <li><a href="https://chrome.google.com/webstore/detail/dimensions/baocaagndhipibgklemoalmkljaimfdj">Chrome Webstore</a>
     </ul>
   </div>
@@ -181,13 +186,8 @@ function showDistances(distances){
 
   var tooltip = document.createElement('div');
   tooltip.className = 'tooltip';
-  // tooltip.style.width = textWidth + "px";
   tooltip.textContent = (measureWidth+1) +" x "+ (measureHeight+1);
   dimensions.appendChild(tooltip);
-
-  var tooltipY = document.createElement('div');
-  tooltipY.className = 'tooltip y';
-  tooltipY.textContent = measureHeight;
 
   holder.appendChild(dimensions);
 }
@@ -225,12 +225,14 @@ function drawCanvas(){
     ctx.drawImage(images[index], pos.left, scrollY+pos.top, el.clientWidth, el.clientHeight);
   }
 
-  // draw install button
-  var installBtn = holder.querySelector('.button');
-  var btnPos = installBtn.getBoundingClientRect();
+  // draw install buttons
+  var installBtns = holder.querySelectorAll('.button');
   ctx.fillStyle = '#444';
 
-  roundedRect(ctx, btnPos.left, scrollY+btnPos.top, installBtn.offsetWidth, installBtn.offsetHeight, 3);
+  for(var i=0; i<installBtns.length; i++){
+    var btnPos = installBtns[i].getBoundingClientRect();
+    roundedRect(ctx, btnPos.left, scrollY+btnPos.top, installBtns[i].offsetWidth, installBtns[i].offsetHeight, 3);
+  }
 
 
   // place the headlines
@@ -266,7 +268,6 @@ function drawCanvas(){
   holder.ontouchmove = storeInputPos;
   window.addEventListener('keydown', detectAltKeyPress);
   window.addEventListener('keyup', detectAltKeyRelease);
-
   holder.onmouseleave = removeDimensions;
 
   // worker.postMessage({ type: 'debug' });

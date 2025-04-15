@@ -1,13 +1,8 @@
 @font-face {
-    font-family: 'Fira Sans';
-    src: url('font/firasans-light-webfont.eot');
-    src: url('font/firasans-light-webfont.eot?#iefix') format('embedded-opentype'),
-         url('font/firasans-light-webfont.woff') format('woff'),
-         url('font/firasans-light-webfont.ttf') format('truetype'),
-         url('font/firasans-light-webfont.svg#fira_sanslight') format('svg');
-    font-weight: 200;
-    font-style: normal;
-
+  font-family: 'Fira Sans';
+  src: url('font/firasans-light-webfont.woff') format('woff');
+  font-weight: 200;
+  font-style: normal;
 }
 
 body {
@@ -20,18 +15,10 @@ header {
   cursor: none;
   height: 480px;
   background: url(../img/header.svg) no-repeat center;
-  display: -webkit-flex;
-  display:     -ms-flex;
-  display:         flex;
-  -webkit-flex-direction: column;
-      -ms-flex-direction: column;
-          flex-direction: column;
-  -webkit-align-items: center;
-      -ms-align-items: center;
-          align-items: center;
-  -webkit-justify-content: center;
-      -ms-justify-content: center;
-          justify-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   position: relative;
   border-bottom: 1px solid rgba(0,0,0,.13);
 }
@@ -58,8 +45,23 @@ h1 {
   font-size: 54px;
 }
 
+@media (max-width: 480px) {
+  h1 {
+    font-size: 42px;
+    margin-left: -40px;
+  }
+}
+
   h1 img {
     margin: 0 10px -6px 0;
+  }
+
+  @media (max-width: 480px) {
+    h1 img {
+      width: 37px;
+      height: 37px;
+      margin-bottom: -4px;
+    }
   }
 
 h2 {
@@ -74,18 +76,27 @@ a {
   text-decoration: none;
 }
 
+.buttons {
+  margin-top: 34px;
+  display: flex;
+  gap: 20px;
+}
+
+@media (max-width: 480px) {
+  .buttons {
+    flex-direction: column;
+  }
+}
+
 .button {
   height: 40px;
-  margin-top: 34px;
+  background: white;
   padding: 0 16px;
   line-height: 42px;
   border: 1px solid;
   border-radius: 3px;
   outline: none;
-  -webkit-user-select: none;
-     -moz-user-select: none;
-      -ms-user-select: none;
-          user-select: none;
+  user-select: none;
 }
 
   .button img {
@@ -100,28 +111,43 @@ a {
   padding: 16px 0;
 }
 
+@media (max-width: 480px) {
+  .container {
+    width: 100%;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+}
+
   .main.container {
     padding-top:    21px;
     padding-bottom: 21px;
   }
 
 .columns {
-  display: -webkit-flex;
-  display:     -ms-flex;
-  display:         flex;
-  -webkit-flex-wrap: wrap;
-      -ms-flex-wrap: wrap;
-          flex-wrap: wrap;
+  display: flex;
+  flex-wrap: wrap;
   text-align: left;
   margin: 0 -55px;
 }
 
+@media (max-width: 480px) {
+  .columns {
+    margin: 0 -16px;
+    display: block;
+  }
+}
+
 .column {
-  -webkit-flex: 0 1 50%;
-      -ms-flex: 0 1 50%;
-          flex: 0 1 50%;
+  flex: 0 1 50%;
   padding: 34px 55px;
   box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .column {
+    padding: 20px 34px;
+  }
 }
 
 .tag {
@@ -157,9 +183,14 @@ footer {
 
   footer .container,
   footer ul {
-    display: -webkit-flex;
-    display:     -ms-flex;
-    display:         flex;
+    display: flex;
+  }
+
+  @media (max-width: 480px) {
+    footer .container,
+    footer ul {
+      display: block;
+    }
   }
 
   footer ul {
@@ -168,8 +199,20 @@ footer {
     list-style: none;
   }
 
+  @media (max-width: 480px) {
+    footer ul {
+      margin-top: 20px;
+    }
+  }
+
   footer li {
     margin-left: 20px;
+  }
+
+  @media (max-width: 480px) {
+    footer a {
+      white-space: nowrap;
+    }
   }
 
 .dimensions {
@@ -193,9 +236,7 @@ footer {
   font-family: sans-serif;
   border-radius: 3px;
   background: hsla(205,100%,10%,.55);
-  -webkit-box-sizing: border-box;
-     -moz-box-sizing: border-box;
-          box-sizing: border-box;
+  box-sizing: border-box;
 }
 
   .tooltip.x,
@@ -263,3 +304,15 @@ footer {
   .y.axis:after {
     top: 100%;
   }
+
+.dimensions-nodes {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.dimensions-node {
+  position: absolute;
+  box-shadow: 0 0 0 1px hsla(110,60%,50%,.5);
+}
