@@ -1,27 +1,26 @@
 {
   "name": "Dimensions",
   "description": "A tool for designers to measure screen dimensions",
-  "version": "2.0.5",
-  "manifest_version": 2,
+  "version": "3.0.0",
+  "manifest_version": 3,
   "author": "Felix Niklas",
-  "icons": { 
+  "icons": {
     "16":  "images/icon16.png",
     "32":  "images/icon16@2x.png",
     "48":  "images/icon48.png",
-    "128": "images/icon128.png" 
+    "128": "images/icon128.png"
   },
   "background": {
-    "scripts": ["chrome.js"],
-    "persistent": false
+    "service_worker": "chrome.js"
   },
   "commands": {
-    "_execute_browser_action": {
+    "_execute_action": {
       "suggested_key": {
         "default": "Alt+D"
       }
     }
   },
-  "browser_action": {
+  "action": {
     "default_icon": {
       "16": "images/icon16.png",
       "19": "images/icon19.png",
@@ -31,6 +30,10 @@
     "default_title": "Measure Dimensions"
   },
   "permissions": [
-    "activeTab"
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*/*"
   ]
 }

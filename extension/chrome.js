@@ -26,10 +26,10 @@ function removeTab(id){
 
 var lastBrowserAction = null;
 
-chrome.browserAction.onClicked.addListener(function(tab){
+chrome.action.onClicked.addListener(function(tab){
   if(lastBrowserAction && Date.now() - lastBrowserAction < 10){
     // fix bug in Chrome Version 49.0.2623.87
-    // that triggers browserAction.onClicked twice 
+    // that triggers browserAction.onClicked twice
     // when called from shortcut _execute_browser_action
     return;
   }
@@ -48,8 +48,6 @@ chrome.runtime.onSuspend.addListener(function() {
 });
 
 var dimensions = {
-  image: new Image(),
-  canvas: document.createElement('canvas'),
   alive: true,
 
   activate: function(tab){
@@ -58,9 +56,21 @@ var dimensions = {
     this.onBrowserDisconnectClosure = this.onBrowserDisconnect.bind(this);
     this.receiveBrowserMessageClosure = this.receiveBrowserMessage.bind(this);
 
-    chrome.tabs.insertCSS(this.tab.id, { file: 'tooltip.css' });
-    chrome.tabs.executeScript(this.tab.id, { file: 'tooltip.chrome.js' });
-    chrome.browserAction.setIcon({ 
+    chrome.scripting.insertCSS({
+      target: { tabId: this.tab.id },
+      files: ['tooltip.css']
+    }).catch(error => {
+      console.error('Failed to inject CSS:', error);
+    });
+
+    chrome.scripting.executeScript({
+      target: { tabId: this.tab.id },
+      files: ['tooltip.chrome.js']
+    }).catch(error => {
+      console.error('Failed to inject script:', error);
+    });
+
+    chrome.action.setIcon({
       tabId: this.tab.id,
       path: {
         16: "images/icon16_active.png",
@@ -68,14 +78,12 @@ var dimensions = {
         32: "images/icon16_active@2x.png",
         38: "images/icon19_active@2x.png"
       }
+    }).catch(error => {
+      console.error('Failed to set icon:', error);
     });
 
-    this.worker = new Worker("dimensions.js");
-    this.worker.onmessage = this.receiveWorkerMessage.bind(this);
-    this.worker.postMessage({ 
-      type: 'init',
-      debug: debug 
-    });
+    // Initialize worker and canvas in content script instead of service worker
+    this.workerReady = false;
   },
 
   deactivate: function(silent){
@@ -87,11 +95,11 @@ var dimensions = {
 
     if(!silent)
       this.port.postMessage({ type: 'destroy' });
-    
+
     this.port.onMessage.removeListener(this.receiveBrowserMessageClosure);
     this.port.onDisconnect.removeListener(this.onBrowserDisconnectClosure);
 
-    chrome.browserAction.setIcon({  
+    chrome.action.setIcon({
       tabId: this.tab.id,
       path: {
         16: "images/icon16.png",
@@ -112,7 +120,7 @@ var dimensions = {
     this.port = port;
 
     if(!this.alive){
-      // was deactivated whilest still booting up
+      // was deactivated whilst still booting up
       this.deactivate();
       return;
     }
@@ -123,6 +131,17 @@ var dimensions = {
       type: 'init',
       debug: debug
     });
+
+    // Initialize worker in content script context
+    this.initializeWorker();
+  },
+
+  initializeWorker: function(){
+    this.port.postMessage({
+      type: 'init_worker',
+      debug: debug
+    });
+    this.workerReady = true;
   },
 
   receiveWorkerMessage: function(event){
@@ -137,7 +156,11 @@ var dimensions = {
     var forward = ['position', 'area'];
 
     if(forward.indexOf(event.type) > -1){
-      this.worker.postMessage(event)
+      // Forward to content script to handle worker communication
+      this.port.postMessage({
+        type: 'worker_message',
+        data: event
+      });
     } else {
       switch(event.type){
         case 'take screenshot':
@@ -146,44 +169,40 @@ var dimensions = {
         case 'close_overlay':
           this.deactivate();
           break;
+        case 'worker_response':
+          // Handle worker responses from content script
+          this.port.postMessage(event.data);
+          break;
+        case 'worker_error':
+        case 'worker_init_failed':
+          console.error('Worker issue:', event.error);
+          break;
       }
     }
   },
 
   takeScreenshot: function(){
-    chrome.tabs.captureVisibleTab({ format: "png" }, this.parseScreenshot.bind(this));
+    try {
+      chrome.tabs.captureVisibleTab({ format: "png" }, this.parseScreenshot.bind(this));
+    } catch (error) {
+      console.error('Failed to capture screenshot:', error);
+      // Notify content script of error
+      if(this.port) {
+        this.port.postMessage({
+          type: 'screenshot_error',
+          error: error.message
+        });
+      }
+    }
   },
 
   parseScreenshot: function(dataUrl){
-    this.image.onload = this.loadImage.bind(this);
-    this.image.src = dataUrl;
-  },
-
-  //
-  // loadImage
-  // ---------
-  //  
-  // responsible to load a image and extract the image data
-  //
-
-  loadImage: function(){
-    this.ctx = this.canvas.getContext('2d');
-
-    // adjust the canvas size to the image size
-    this.canvas.width = this.tab.width;
-    this.canvas.height = this.tab.height;
-    
-    // draw the image to the canvas
-    this.ctx.drawImage(this.image, 0, 0, this.canvas.width, this.canvas.height);
-    
-    // read out the image data from the canvas
-    var imgData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height).data;
-
-    this.worker.postMessage({ 
-      type: 'imgData',
-      imgData: imgData.buffer,  
-      width: this.canvas.width,
-      height: this.canvas.height
-    }, [imgData.buffer]);
+    // Send screenshot data to content script for processing
+    this.port.postMessage({
+      type: 'process_screenshot',
+      dataUrl: dataUrl,
+      tabWidth: this.tab.width,
+      tabHeight: this.tab.height
+    });
   }
 };
