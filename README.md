@@ -19,11 +19,14 @@ Change Log
 - Updated permissions structure with separate `host_permissions`
 - Enhanced error handling for screenshot capture and worker communication
 - Improved memory management with proper cleanup of blob URLs and worker instances
-- All existing functionality preserved (Alt+D activation, hover measurements, Alt+click area measurement, ESC to close)
+- **CHANGED**: Keyboard shortcut updated from Alt+D to Alt+Shift+D (Alt+D conflicts with Chrome's address bar focus)
+- Fixed service worker context issues that caused errors during extension enable/disable cycles
+- All existing functionality preserved (Alt+Shift+D activation, hover measurements, Alt+click area measurement, ESC to close)
 
 **Breaking Changes:**
 - Minimum Chrome version requirement: 88+ (Manifest V3 support)
 - Legacy Manifest V2 browsers no longer supported
+- Keyboard shortcut changed from Alt+D to Alt+Shift+D
 
 ## Version 2.0.5 (2016-10-23)
 

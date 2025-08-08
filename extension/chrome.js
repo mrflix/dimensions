@@ -109,7 +109,7 @@ var dimensions = {
       }
     });
 
-    window.removeTab(this.tab.id);
+    removeTab(this.tab.id);
   },
 
   onBrowserDisconnect: function(){
