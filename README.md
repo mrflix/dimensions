@@ -9,24 +9,13 @@ Download from the [Product Website](http://felixniklas.com/dimensions/), the [Ch
 Change Log
 ==========
 
-## Version 3.0.0 (2025-08-07)
+## Version 3.0.0 (2025-10-02)
 
 **Major Update - Manifest V3 Migration:**
 
-- **CRITICAL**: Updated Chrome extension to Manifest V3 for Chrome 139+ compatibility
-- Migrated from background scripts to service worker architecture
-- Replaced external worker with inline worker code to comply with Chrome security policies
-- Updated permissions structure with separate `host_permissions`
-- Enhanced error handling for screenshot capture and worker communication
-- Improved memory management with proper cleanup of blob URLs and worker instances
-- **CHANGED**: Keyboard shortcut updated from Alt+D to Alt+Shift+D (Alt+D conflicts with Chrome's address bar focus)
-- Fixed service worker context issues that caused errors during extension enable/disable cycles
-- All existing functionality preserved (Alt+Shift+D activation, hover measurements, Alt+click area measurement, ESC to close)
-
-**Breaking Changes:**
+- Manifest V3 for Chrome 139+ compatibility
 - Minimum Chrome version requirement: 88+ (Manifest V3 support)
 - Legacy Manifest V2 browsers no longer supported
-- Keyboard shortcut changed from Alt+D to Alt+Shift+D
 
 ## Version 2.0.5 (2016-10-23)
 
