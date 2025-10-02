@@ -17,6 +17,8 @@ Change Log
 - Minimum Chrome version requirement: 88+ (Manifest V3 support)
 - Legacy Manifest V2 browsers no longer supported
 
+This update was contributed by @xDhii. Thank you!
+
 ## Version 2.0.5 (2016-10-23)
 
 - make sure that the text direction stays left-to-right [\#30](https://github.com/mrflix/dimensions/issues/30)
