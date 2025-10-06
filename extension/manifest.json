@@ -32,8 +32,5 @@
   "permissions": [
     "activeTab",
     "scripting"
-  ],
-  "host_permissions": [
-    "*://*/*"
   ]
 }
